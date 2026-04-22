@@ -17,13 +17,16 @@
       --ink:       #1A1714;
       --ink-2:     #44403C;
       --muted:     #78716C;
-      --gold:      #9A6D2E;   /* RGMC logo gold */
-      --orange:    #D4700A;   /* Claude-style accent */
+      --gold:      #9A6D2E;
+      --orange:    #D4700A;
       --orange-lt: #FEF3E2;
       --green:     #15803D;
       --green-lt:  #DCFCE7;
       --red:       #DC2626;
       --red-lt:    #FEF2F2;
+      --amber:     #92400E;
+      --amber-lt:  #FFFBEB;
+      --amber-bd:  #FDE68A;
       --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
       --shadow:    0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
       --r-sm:      6px;
@@ -32,7 +35,6 @@
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html { scroll-behavior: smooth; }
 
     body {
@@ -54,56 +56,22 @@
       height: 64px;
       display: flex;
       align-items: center;
-      gap: 0;
       position: sticky;
       top: 0;
       z-index: 50;
     }
-
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-decoration: none;
-    }
-    .header-brand img {
-      height: 38px;
-      width: auto;
-      display: block;
-    }
-    .header-divider {
-      width: 1px;
-      height: 28px;
-      background: var(--border);
-      margin: 0 16px;
-    }
-    .header-title {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
-    .header-title h1 {
-      font-size: .95rem;
-      font-weight: 600;
-      color: var(--ink);
-      letter-spacing: -.01em;
-    }
-    .header-title span {
-      font-size: .72rem;
-      color: var(--muted);
-      font-weight: 400;
-    }
+    .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .header-brand img { height: 38px; width: auto; display: block; }
+    .header-divider { width: 1px; height: 28px; background: var(--border); margin: 0 16px; }
+    .header-title { display: flex; flex-direction: column; gap: 1px; }
+    .header-title h1 { font-size: .95rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .header-title span { font-size: .72rem; color: var(--muted); font-weight: 400; }
     .header-spacer { flex: 1; }
     .header-badge {
-      background: var(--orange-lt);
-      color: var(--orange);
-      border: 1px solid rgba(212,112,10,.18);
-      border-radius: 20px;
-      font-size: .7rem;
-      font-weight: 600;
-      padding: 3px 10px;
-      letter-spacing: .04em;
-      text-transform: uppercase;
+      background: var(--orange-lt); color: var(--orange);
+      border: 1px solid rgba(212,112,10,.18); border-radius: 20px;
+      font-size: .7rem; font-weight: 600; padding: 3px 10px;
+      letter-spacing: .04em; text-transform: uppercase;
     }
 
     /* ════════════════════════════════
@@ -117,21 +85,9 @@
       flex-direction: column;
       gap: 20px;
     }
-
-    .page-header {
-      margin-bottom: 4px;
-    }
-    .page-header h2 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--ink);
-      letter-spacing: -.02em;
-    }
-    .page-header p {
-      font-size: .875rem;
-      color: var(--muted);
-      margin-top: 4px;
-    }
+    .page-header { margin-bottom: 4px; }
+    .page-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--ink); letter-spacing: -.02em; }
+    .page-header p { font-size: .875rem; color: var(--muted); margin-top: 4px; }
 
     /* ════════════════════════════════
        CARDS / SECTIONS
@@ -143,37 +99,20 @@
       overflow: hidden;
       box-shadow: var(--shadow-sm);
     }
-
     .section-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      display: flex; align-items: center; gap: 12px;
       padding: 18px 22px;
       border-bottom: 1px solid var(--border-lt);
     }
     .step-num {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      background: var(--orange);
-      color: #fff;
-      font-size: .75rem;
-      font-weight: 700;
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--orange); color: #fff;
+      font-size: .75rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      letter-spacing: 0;
     }
-    .section-head-text h3 {
-      font-size: .875rem;
-      font-weight: 600;
-      color: var(--ink);
-      letter-spacing: -.01em;
-    }
-    .section-head-text p {
-      font-size: .76rem;
-      color: var(--muted);
-      margin-top: 1px;
-    }
-
+    .section-head-text h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .section-head-text p { font-size: .76rem; color: var(--muted); margin-top: 1px; }
     .section-body { padding: 22px; }
 
     /* ════════════════════════════════
@@ -182,281 +121,305 @@
     #drop-zone {
       border: 2px dashed var(--border);
       border-radius: var(--r);
-      padding: 36px 24px;
+      padding: 32px 24px;
       text-align: center;
       cursor: pointer;
       transition: border-color .18s, background .18s;
       background: var(--bg);
     }
-    #drop-zone:hover,
-    #drop-zone.dragover {
-      border-color: var(--orange);
-      background: var(--orange-lt);
-    }
+    #drop-zone:hover, #drop-zone.dragover { border-color: var(--orange); background: var(--orange-lt); }
+    #drop-zone.reading { border-color: var(--orange); background: var(--orange-lt); cursor: wait; }
+
     .upload-icon {
-      width: 44px; height: 44px;
-      background: var(--orange-lt);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 12px;
+      width: 44px; height: 44px; background: var(--orange-lt); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;
     }
     .upload-icon svg { width: 20px; height: 20px; stroke: var(--orange); }
     #drop-zone p { font-size: .875rem; color: var(--muted); }
     #drop-zone strong { color: var(--ink); font-weight: 600; }
-    #file-input { display: none; }
 
-    #browse-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 12px;
-      background: var(--orange);
-      color: #fff;
-      border: none;
-      border-radius: var(--r-sm);
-      padding: 8px 18px;
-      font-size: .83rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      transition: opacity .15s;
-    }
-    #browse-btn:hover { opacity: .88; }
-
-    /* File chips */
-    #file-list {
-      margin-top: 16px;
+    .upload-btns {
       display: flex;
-      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
       gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
     }
-    .file-chip {
+    .upload-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: none; border-radius: var(--r-sm);
+      padding: 8px 16px; font-size: .83rem; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: opacity .15s;
+    }
+    .upload-btn-primary { background: var(--orange); color: #fff; }
+    .upload-btn-secondary {
+      background: var(--surface); color: var(--ink-2);
+      border: 1px solid var(--border);
+    }
+    .upload-btn:hover { opacity: .85; }
+
+    #file-input, #folder-input { display: none; }
+
+    /* ── Reading overlay text ── */
+    #reading-msg {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 12px;
+      font-size: .8rem;
+      color: var(--orange);
+      font-weight: 500;
+    }
+    #reading-msg .spinner { width: 12px; height: 12px; border-width: 2px; }
+
+    /* ════════════════════════════════
+       FILE LIST
+    ════════════════════════════════ */
+    #file-list-wrap { display: none; margin-top: 16px; }
+
+    .file-list-header {
       display: flex;
       align-items: center;
-      gap: 7px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 10px 5px 6px;
-      font-size: .78rem;
-      color: var(--ink-2);
-      box-shadow: var(--shadow-sm);
+      justify-content: space-between;
+      margin-bottom: 10px;
     }
-    .file-chip img {
-      width: 24px; height: 24px;
-      object-fit: cover;
-      border-radius: 4px;
+    .file-count {
+      font-size: .78rem; font-weight: 600; color: var(--ink-2);
+    }
+    .file-count span { color: var(--muted); font-weight: 400; }
+
+    .sort-controls { display: flex; align-items: center; gap: 6px; }
+    .sort-label { font-size: .72rem; color: var(--muted); }
+    .sort-btn-group { display: flex; border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+    .sort-btn {
+      background: var(--surface); border: none; padding: 4px 10px;
+      font-size: .72rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; color: var(--muted); transition: background .12s, color .12s;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .sort-btn + .sort-btn { border-left: 1px solid var(--border); }
+    .sort-btn.active { background: var(--orange); color: #fff; }
+    .sort-btn:hover:not(.active) { background: var(--bg); color: var(--ink); }
+
+    #file-list { display: flex; flex-direction: column; gap: 5px; }
+
+    .file-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      transition: border-color .12s;
+    }
+    .file-item.is-dup {
+      border-color: var(--amber-bd);
+      background: var(--amber-lt);
+    }
+    .file-thumb {
+      width: 38px; height: 38px; object-fit: cover;
+      border-radius: 5px; flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .file-info { flex: 1; min-width: 0; }
+    .file-name {
+      font-size: .82rem; font-weight: 500; color: var(--ink);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      display: block;
+    }
+    .file-meta {
+      font-size: .71rem; color: var(--muted);
+      margin-top: 2px; display: flex; align-items: center; gap: 5px;
+      white-space: nowrap; overflow: hidden;
+    }
+    .file-folder {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--border-lt); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 5px;
+      font-size: .68rem; color: var(--ink-2); font-weight: 500;
+      max-width: 160px; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-size { color: var(--muted); }
+    .dup-badge {
+      background: #FEF3C7; border: 1px solid var(--amber-bd);
+      color: var(--amber); border-radius: 4px;
+      padding: 2px 7px; font-size: .68rem; font-weight: 600;
+      flex-shrink: 0; white-space: nowrap;
+      display: flex; align-items: center; gap: 3px;
+    }
+    .file-rm {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); padding: 5px 6px; border-radius: 4px;
+      flex-shrink: 0; transition: background .12s, color .12s;
+      font-size: .8rem; line-height: 1;
+    }
+    .file-rm:hover { color: var(--red); background: var(--red-lt); }
+
+    /* ════════════════════════════════
+       DUPLICATE WARNING BANNER
+    ════════════════════════════════ */
+    #dup-warning {
+      display: none;
+      background: var(--amber-lt);
+      border: 1px solid var(--amber-bd);
+      border-radius: var(--r-sm);
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+    .dup-warning-top {
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .dup-warn-icon {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #FEF3C7; border: 1px solid var(--amber-bd);
+      display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
     }
-    .file-chip .rm {
-      cursor: pointer;
-      color: var(--muted);
-      font-size: .9rem;
-      line-height: 1;
-      margin-left: 2px;
-      transition: color .12s;
+    .dup-warn-icon svg { stroke: #D97706; }
+    .dup-warning-body { flex: 1; min-width: 0; }
+    .dup-warning-body strong {
+      font-size: .83rem; font-weight: 600; color: var(--amber);
+      display: block; margin-bottom: 2px;
     }
-    .file-chip .rm:hover { color: var(--red); }
+    .dup-warning-body p { font-size: .78rem; color: var(--ink-2); line-height: 1.4; }
+    #dup-list {
+      margin-top: 8px;
+      display: flex; flex-direction: column; gap: 3px;
+    }
+    .dup-row {
+      font-size: .75rem; color: var(--ink-2);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .dup-row-name { font-weight: 600; }
+    .dup-row-paths { color: var(--muted); }
+    .dup-actions {
+      display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .btn-rm-dups {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--amber); color: #fff;
+      border: none; border-radius: var(--r-sm);
+      padding: 6px 14px; font-size: .78rem; font-weight: 600;
+      font-family: inherit; cursor: pointer; transition: opacity .15s;
+    }
+    .btn-rm-dups:hover { opacity: .85; }
+    .btn-dismiss {
+      background: none; border: 1px solid var(--amber-bd);
+      border-radius: var(--r-sm); padding: 6px 14px;
+      font-size: .78rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; color: var(--ink-2); transition: background .12s;
+    }
+    .btn-dismiss:hover { background: var(--border-lt); }
 
     /* ════════════════════════════════
        PROMPT SECTION
     ════════════════════════════════ */
     .instruction-box {
-      display: flex;
-      gap: 10px;
-      background: var(--orange-lt);
-      border: 1px solid rgba(212,112,10,.2);
-      border-radius: var(--r-sm);
-      padding: 10px 14px;
-      margin-bottom: 16px;
+      display: flex; gap: 10px;
+      background: var(--orange-lt); border: 1px solid rgba(212,112,10,.2);
+      border-radius: var(--r-sm); padding: 10px 14px; margin-bottom: 16px;
     }
     .instruction-box svg { flex-shrink: 0; margin-top: 2px; }
     .instruction-box div { font-size: .8rem; color: var(--ink-2); line-height: 1.5; }
-    .instruction-box strong { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); margin-bottom: 2px; font-weight: 700; }
-
-    label.field-label {
-      display: block;
-      font-size: .78rem;
-      font-weight: 600;
-      color: var(--ink-2);
-      margin-bottom: 6px;
-      letter-spacing: .01em;
+    .instruction-box strong {
+      display: block; font-size: .72rem; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--orange); margin-bottom: 2px; font-weight: 700;
     }
 
+    label.field-label {
+      display: block; font-size: .78rem; font-weight: 600;
+      color: var(--ink-2); margin-bottom: 6px; letter-spacing: .01em;
+    }
     textarea {
-      width: 100%;
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 10px 13px;
-      font-size: .83rem;
+      width: 100%; border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 10px 13px; font-size: .83rem;
       font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-      resize: vertical;
-      color: var(--ink);
-      background: var(--bg);
-      line-height: 1.6;
+      resize: vertical; color: var(--ink); background: var(--bg); line-height: 1.6;
       transition: border-color .15s, box-shadow .15s;
     }
     textarea:focus {
-      outline: none;
-      border-color: var(--orange);
-      box-shadow: 0 0 0 3px rgba(212,112,10,.1);
-      background: var(--surface);
+      outline: none; border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1); background: var(--surface);
     }
-
-    .helper-text {
-      font-size: .74rem;
-      color: var(--muted);
-      margin-top: 6px;
-    }
+    .helper-text { font-size: .74rem; color: var(--muted); margin-top: 6px; }
     .helper-text code {
-      background: var(--border-lt);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: .72rem;
-      color: var(--orange);
-      font-family: monospace;
+      background: var(--border-lt); border: 1px solid var(--border);
+      border-radius: 4px; padding: 1px 5px; font-size: .72rem;
+      color: var(--orange); font-family: monospace;
     }
 
     /* ════════════════════════════════
        ATTRIBUTES TABLE
     ════════════════════════════════ */
     .attr-table-wrap {
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      overflow: hidden;
-      margin-bottom: 12px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      overflow: hidden; margin-bottom: 12px;
     }
-    .attr-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .83rem;
-    }
-    .attr-table thead tr {
-      background: var(--bg);
-      border-bottom: 1px solid var(--border);
-    }
+    .attr-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .attr-table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
     .attr-table th {
-      text-align: left;
-      padding: 9px 12px;
-      font-size: .72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      color: var(--muted);
+      text-align: left; padding: 9px 12px; font-size: .72rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .06em; color: var(--muted);
     }
     .attr-table td { border-top: 1px solid var(--border-lt); padding: 0; }
     .attr-table tbody tr:first-child td { border-top: none; }
     .attr-table tbody tr:hover td { background: var(--bg); }
     .attr-table td input {
-      width: 100%;
-      border: none;
-      padding: 9px 12px;
-      font-size: .83rem;
-      background: transparent;
-      color: var(--ink);
-      font-family: inherit;
+      width: 100%; border: none; padding: 9px 12px; font-size: .83rem;
+      background: transparent; color: var(--ink); font-family: inherit;
     }
     .attr-table td input:focus { outline: none; background: var(--orange-lt); }
     .attr-table .td-rm { width: 44px; text-align: center; }
     .rm-attr {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--muted);
-      font-size: .82rem;
-      width: 26px; height: 26px;
-      border-radius: 6px;
+      background: none; border: none; cursor: pointer; color: var(--muted);
+      font-size: .82rem; width: 26px; height: 26px; border-radius: 6px;
       display: inline-flex; align-items: center; justify-content: center;
       transition: background .12s, color .12s;
     }
     .rm-attr:hover { color: var(--red); background: var(--red-lt); }
-
     #add-attr-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 7px 14px;
-      font-size: .8rem;
-      font-weight: 500;
-      font-family: inherit;
-      cursor: pointer;
-      color: var(--ink-2);
-      transition: background .12s, border-color .12s;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 7px 14px; font-size: .8rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; color: var(--ink-2); transition: background .12s, border-color .12s;
     }
     #add-attr-btn:hover { background: var(--bg); border-color: var(--orange); color: var(--orange); }
 
     /* ════════════════════════════════
        OUTPUT FORMAT CARDS
     ════════════════════════════════ */
-    .format-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-    .format-card {
-      position: relative;
-      cursor: pointer;
-    }
-    .format-card input[type=checkbox] {
-      position: absolute;
-      opacity: 0;
-      width: 0; height: 0;
-    }
+    .format-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .format-card { position: relative; cursor: pointer; }
+    .format-card input[type=checkbox] { position: absolute; opacity: 0; width: 0; height: 0; }
     .format-card-inner {
-      border: 1.5px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px 16px;
-      transition: border-color .15s, background .15s, box-shadow .15s;
-      background: var(--surface);
+      border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px 16px;
+      transition: border-color .15s, background .15s, box-shadow .15s; background: var(--surface);
     }
     .format-card input:checked ~ .format-card-inner {
-      border-color: var(--orange);
-      background: var(--orange-lt);
+      border-color: var(--orange); background: var(--orange-lt);
       box-shadow: 0 0 0 3px rgba(212,112,10,.1);
     }
     .format-card-inner:hover { border-color: var(--orange); }
-
     .format-icon {
-      width: 32px; height: 32px;
-      border-radius: 8px;
+      width: 32px; height: 32px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 10px;
-      font-size: 1rem;
+      margin-bottom: 10px; font-size: 1rem;
     }
     .fmt-xls .format-icon { background: #E8F5E9; }
     .fmt-csv .format-icon { background: #E3F2FD; }
     .fmt-txt .format-icon { background: #F3E5F5; }
-
-    .format-card-inner .fmt-name {
-      font-size: .82rem;
-      font-weight: 600;
-      color: var(--ink);
-      display: block;
-      margin-bottom: 3px;
-    }
-    .format-card-inner .fmt-desc {
-      font-size: .72rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
+    .format-card-inner .fmt-name { font-size: .82rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 3px; }
+    .format-card-inner .fmt-desc { font-size: .72rem; color: var(--muted); line-height: 1.4; }
     .format-check {
-      position: absolute;
-      top: 10px; right: 10px;
-      width: 18px; height: 18px;
-      border-radius: 50%;
+      position: absolute; top: 10px; right: 10px;
+      width: 18px; height: 18px; border-radius: 50%;
       border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      background: var(--surface);
-      transition: background .15s, border-color .15s;
+      background: var(--surface); transition: background .15s, border-color .15s;
     }
-    .format-card input:checked ~ .format-card-inner .format-check {
-      background: var(--orange);
-      border-color: var(--orange);
-    }
+    .format-card input:checked ~ .format-card-inner .format-check { background: var(--orange); border-color: var(--orange); }
     .format-check svg { display: none; }
     .format-card input:checked ~ .format-card-inner .format-check svg { display: block; }
 
@@ -464,22 +427,11 @@
        PROCESS BUTTON
     ════════════════════════════════ */
     #process-btn {
-      width: 100%;
-      padding: 14px;
-      background: var(--orange);
-      color: #fff;
-      font-size: .95rem;
-      font-weight: 600;
-      font-family: inherit;
-      border: none;
-      border-radius: var(--r);
-      cursor: pointer;
-      transition: opacity .15s, transform .1s;
-      letter-spacing: -.01em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      width: 100%; padding: 14px; background: var(--orange); color: #fff;
+      font-size: .95rem; font-weight: 600; font-family: inherit; border: none;
+      border-radius: var(--r); cursor: pointer;
+      transition: opacity .15s, transform .1s; letter-spacing: -.01em;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
       box-shadow: 0 1px 3px rgba(212,112,10,.3);
     }
     #process-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
@@ -490,88 +442,45 @@
        PROGRESS
     ════════════════════════════════ */
     #progress-card { display: none; }
-    .progress-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
+    .progress-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .progress-label {
-      font-size: .83rem;
-      font-weight: 600;
-      color: var(--ink);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: .83rem; font-weight: 600; color: var(--ink);
+      display: flex; align-items: center; gap: 8px;
     }
     .spinner {
-      width: 14px; height: 14px;
-      border: 2px solid var(--border);
-      border-top-color: var(--orange);
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      flex-shrink: 0;
+      width: 14px; height: 14px; border: 2px solid var(--border);
+      border-top-color: var(--orange); border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    #progress-pct {
-      font-size: .78rem;
-      font-weight: 600;
-      color: var(--orange);
-    }
+    #progress-pct { font-size: .78rem; font-weight: 600; color: var(--orange); }
     .progress-track {
-      background: var(--border-lt);
-      border-radius: 99px;
-      height: 8px;
-      overflow: hidden;
-      margin-bottom: 8px;
+      background: var(--border-lt); border-radius: 99px; height: 8px;
+      overflow: hidden; margin-bottom: 8px;
     }
     .progress-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--orange), #F59E0B);
-      border-radius: 99px;
-      width: 0%;
-      transition: width .4s cubic-bezier(.4,0,.2,1);
+      height: 100%; background: linear-gradient(90deg, var(--orange), #F59E0B);
+      border-radius: 99px; width: 0%; transition: width .4s cubic-bezier(.4,0,.2,1);
     }
-    #progress-msg {
-      font-size: .78rem;
-      color: var(--muted);
-    }
+    #progress-msg { font-size: .78rem; color: var(--muted); }
 
     /* ════════════════════════════════
        RESULT
     ════════════════════════════════ */
     #result-card { display: none; }
-    .result-inner {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
+    .result-inner { display: flex; align-items: center; gap: 14px; }
     .result-icon {
-      width: 44px; height: 44px;
-      background: var(--green-lt);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      width: 44px; height: 44px; background: var(--green-lt);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .result-icon svg { stroke: var(--green); }
     .result-text h4 { font-size: .88rem; font-weight: 600; color: var(--ink); }
     .result-text p { font-size: .78rem; color: var(--muted); margin-top: 2px; }
-
     #download-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      margin-top: 14px;
-      background: var(--green);
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: var(--r-sm);
-      font-size: .85rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: opacity .15s;
-      box-shadow: 0 1px 3px rgba(21,128,61,.25);
+      display: inline-flex; align-items: center; gap: 7px; margin-top: 14px;
+      background: var(--green); color: #fff; padding: 10px 20px; border-radius: var(--r-sm);
+      font-size: .85rem; font-weight: 600; text-decoration: none;
+      transition: opacity .15s; box-shadow: 0 1px 3px rgba(21,128,61,.25);
     }
     #download-btn:hover { opacity: .88; }
 
@@ -579,25 +488,13 @@
        ERROR
     ════════════════════════════════ */
     #error-card { display: none; }
-    .error-inner {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
+    .error-inner { display: flex; gap: 12px; align-items: flex-start; }
     .error-icon {
-      width: 32px; height: 32px;
-      background: var(--red-lt);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+      width: 32px; height: 32px; background: var(--red-lt); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .error-icon svg { stroke: var(--red); }
-    #error-msg {
-      font-size: .85rem;
-      color: var(--red);
-      padding-top: 6px;
-      line-height: 1.5;
-    }
+    #error-msg { font-size: .85rem; color: var(--red); padding-top: 6px; line-height: 1.5; }
 
     /* ════════════════════════════════
        RESPONSIVE
@@ -609,6 +506,7 @@
       .section-body { padding: 16px; }
       .section-head { padding: 14px 16px; }
       .format-grid { grid-template-columns: 1fr; }
+      .upload-btns { flex-direction: column; }
     }
   </style>
 </head>
@@ -642,25 +540,86 @@
       <div class="step-num">1</div>
       <div class="section-head-text">
         <h3>Upload Images</h3>
-        <p>JPG, JPEG, PNG, WEBP supported</p>
+        <p>Images or folders — JPG, JPEG, PNG, WEBP</p>
       </div>
     </div>
     <div class="section-body">
-      <div id="drop-zone" role="button" aria-label="Upload images">
+
+      <div id="drop-zone" role="button" aria-label="Upload images or folders">
         <div class="upload-icon">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path d="M12 15V3m0 0L8 7m4-4 4 4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/>
+            <path d="M12 15V3m0 0L8 7m4-4 4 4"/>
+            <path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/>
           </svg>
         </div>
-        <p><strong>Drag &amp; drop images here</strong></p>
-        <p style="margin-top:4px;font-size:.8rem;">or click to browse from your computer</p>
-        <button id="browse-btn" type="button">
-          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Choose Files
-        </button>
+        <p><strong>Drag &amp; drop images or folders here</strong></p>
+        <p style="margin-top:4px;font-size:.8rem;">All images inside folders are read automatically</p>
+        <div class="upload-btns">
+          <button class="upload-btn upload-btn-primary" id="browse-btn" type="button">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Choose Files
+          </button>
+          <button class="upload-btn upload-btn-secondary" id="browse-folder-btn" type="button">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+            Choose Folder
+          </button>
+        </div>
       </div>
-      <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple />
-      <div id="file-list"></div>
+
+      <div id="reading-msg">
+        <span class="spinner"></span>
+        Reading folder contents…
+      </div>
+
+      <input id="file-input"   type="file" accept=".jpg,.jpeg,.png,.webp" multiple />
+      <input id="folder-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple webkitdirectory />
+
+      <!-- File list -->
+      <div id="file-list-wrap">
+        <div class="file-list-header">
+          <span class="file-count" id="file-count">0 files</span>
+          <div class="sort-controls">
+            <span class="sort-label">Sort</span>
+            <div class="sort-btn-group">
+              <button class="sort-btn active" id="sort-az" type="button">
+                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+                A → Z
+              </button>
+              <button class="sort-btn" id="sort-za" type="button">
+                <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M7 12h10M11 18h2"/></svg>
+                Z → A
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="file-list"></div>
+        <div id="dup-warning">
+          <div class="dup-warning-top">
+            <div class="dup-warn-icon">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <div class="dup-warning-body">
+              <strong id="dup-title">Duplicate files detected</strong>
+              <p>Files with the same name were found across your selection. Keeping duplicates may produce overwritten outputs.</p>
+              <div id="dup-list"></div>
+              <div class="dup-actions">
+                <button class="btn-rm-dups" id="btn-rm-dups" type="button">
+                  <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4h6v2"/></svg>
+                  Remove Duplicates
+                </button>
+                <button class="btn-dismiss" id="btn-dismiss-dups" type="button">Keep All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -683,7 +642,6 @@
           {{ prompt_instruction }}
         </div>
       </div>
-
       <label class="field-label" for="prompt-template">Prompt Template</label>
       <textarea id="prompt-template" rows="15">{{ prompt_template }}</textarea>
       <p class="helper-text">
@@ -732,48 +690,38 @@
     </div>
     <div class="section-body">
       <div class="format-grid">
-
         <label class="format-card fmt-xls">
           <input type="checkbox" name="fmt" value="xls" checked />
           <div class="format-card-inner">
-            <div class="format-check">
-              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">📊</div>
             <span class="fmt-name">Excel (.xlsx)</span>
             <span class="fmt-desc">Embedded thumbnails with all attributes as columns</span>
           </div>
         </label>
-
         <label class="format-card fmt-csv">
           <input type="checkbox" name="fmt" value="csv" />
           <div class="format-card-inner">
-            <div class="format-check">
-              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">📋</div>
             <span class="fmt-name">CSV (.csv)</span>
             <span class="fmt-desc">Filename column instead of image, same structure</span>
           </div>
         </label>
-
         <label class="format-card fmt-txt">
           <input type="checkbox" name="fmt" value="txt" />
           <div class="format-card-inner">
-            <div class="format-check">
-              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">📄</div>
             <span class="fmt-name">Text files (.txt)</span>
             <span class="fmt-desc">One file per product, named after the product title</span>
           </div>
         </label>
-
       </div>
     </div>
   </div>
 
-  <!-- Process button -->
+  <!-- Process -->
   <button id="process-btn" type="button">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
     Generate Attributes
@@ -783,15 +731,10 @@
   <div class="section" id="progress-card">
     <div class="section-body">
       <div class="progress-header">
-        <span class="progress-label">
-          <span class="spinner"></span>
-          Processing images…
-        </span>
+        <span class="progress-label"><span class="spinner"></span>Processing images…</span>
         <span id="progress-pct">0%</span>
       </div>
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-fill"></div>
-      </div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <p id="progress-msg">Starting…</p>
     </div>
   </div>
@@ -827,79 +770,303 @@
     </div>
   </div>
 
-</div><!-- /page -->
+</div>
 
 <script>
 (function () {
-  const files = [];
+  // ── State ──────────────────────────────────────────────
+  // Each entry: { file: File, folder: string, url: string }
+  let files = [];
+  let sortOrder = 'az';   // 'az' | 'za'
+  let dupDismissed = false;
+
   let currentJobId = null;
   let pollTimer    = null;
 
   const DEFAULT_ATTRS = {{ default_attributes | safe }};
 
-  const dropZone     = document.getElementById('drop-zone');
-  const fileInput    = document.getElementById('file-input');
-  const browseBtn    = document.getElementById('browse-btn');
-  const fileList     = document.getElementById('file-list');
-  const attrTbody    = document.getElementById('attr-tbody');
-  const addAttrBtn   = document.getElementById('add-attr-btn');
-  const promptTA     = document.getElementById('prompt-template');
-  const processBtn   = document.getElementById('process-btn');
-  const progressCard = document.getElementById('progress-card');
-  const progressFill = document.getElementById('progress-fill');
-  const progressPct  = document.getElementById('progress-pct');
-  const progressMsg  = document.getElementById('progress-msg');
-  const errorCard    = document.getElementById('error-card');
-  const errorMsg     = document.getElementById('error-msg');
-  const resultCard   = document.getElementById('result-card');
-  const downloadBtn  = document.getElementById('download-btn');
-  const resultMsg    = document.getElementById('result-msg');
+  // ── DOM refs ───────────────────────────────────────────
+  const dropZone       = document.getElementById('drop-zone');
+  const fileInput      = document.getElementById('file-input');
+  const folderInput    = document.getElementById('folder-input');
+  const browseBtn      = document.getElementById('browse-btn');
+  const browseFolderBtn= document.getElementById('browse-folder-btn');
+  const readingMsg     = document.getElementById('reading-msg');
+  const fileListWrap   = document.getElementById('file-list-wrap');
+  const fileCountEl    = document.getElementById('file-count');
+  const fileListEl     = document.getElementById('file-list');
+  const sortAzBtn      = document.getElementById('sort-az');
+  const sortZaBtn      = document.getElementById('sort-za');
+  const dupWarning     = document.getElementById('dup-warning');
+  const dupTitle       = document.getElementById('dup-title');
+  const dupListEl      = document.getElementById('dup-list');
+  const btnRmDups      = document.getElementById('btn-rm-dups');
+  const btnDismissDups = document.getElementById('btn-dismiss-dups');
+  const attrTbody      = document.getElementById('attr-tbody');
+  const addAttrBtn     = document.getElementById('add-attr-btn');
+  const promptTA       = document.getElementById('prompt-template');
+  const processBtn     = document.getElementById('process-btn');
+  const progressCard   = document.getElementById('progress-card');
+  const progressFill   = document.getElementById('progress-fill');
+  const progressPct    = document.getElementById('progress-pct');
+  const progressMsg    = document.getElementById('progress-msg');
+  const errorCard      = document.getElementById('error-card');
+  const errorMsg       = document.getElementById('error-msg');
+  const resultCard     = document.getElementById('result-card');
+  const downloadBtn    = document.getElementById('download-btn');
+  const resultMsg      = document.getElementById('result-msg');
 
   DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
 
-  // ── File handling ──
-  browseBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
-  fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+  // ── File type check ────────────────────────────────────
+  const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+  const ALLOWED_EXT   = /\.(jpe?g|png|webp)$/i;
 
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('dragover'); });
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('dragover');
-    addFiles(Array.from(e.dataTransfer.files));
-  });
-  dropZone.addEventListener('click', e => {
-    if (e.target === browseBtn || browseBtn.contains(e.target)) return;
-    fileInput.click();
-  });
+  function isImage(file) {
+    return ALLOWED_TYPES.has(file.type) || ALLOWED_EXT.test(file.name);
+  }
 
-  function addFiles(newFiles) {
-    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    newFiles.filter(f => allowed.includes(f.type)).forEach(f => {
-      if (!files.find(x => x.file.name === f.name && x.file.size === f.size))
-        files.push({ file: f, url: URL.createObjectURL(f) });
+  // ── Folder reading (FileSystem API) ───────────────────
+
+  function readAllEntries(reader) {
+    return new Promise(resolve => {
+      const all = [];
+      function batch() {
+        reader.readEntries(entries => {
+          if (!entries.length) { resolve(all); return; }
+          all.push(...entries);
+          batch();
+        }, () => resolve(all));
+      }
+      batch();
     });
+  }
+
+  async function collectFromEntry(entry, folderPath) {
+    if (entry.isFile) {
+      return new Promise(resolve => {
+        entry.file(f => {
+          if (isImage(f)) resolve([{ file: f, folder: folderPath }]);
+          else resolve([]);
+        }, () => resolve([]));
+      });
+    }
+    if (entry.isDirectory) {
+      const subPath = folderPath ? folderPath + '/' + entry.name : entry.name;
+      const entries = await readAllEntries(entry.createReader());
+      const nested  = await Promise.all(entries.map(e => collectFromEntry(e, subPath)));
+      return nested.flat();
+    }
+    return [];
+  }
+
+  // ── Adding files ──────────────────────────────────────
+
+  async function addFromDrop(dataTransfer) {
+    setReading(true);
+    const items   = Array.from(dataTransfer.items || []);
+    const results = [];
+
+    for (const item of items) {
+      if (item.kind !== 'file') continue;
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (!entry) {
+        const f = item.getAsFile();
+        if (f && isImage(f)) results.push({ file: f, folder: '' });
+        continue;
+      }
+      const collected = await collectFromEntry(entry, entry.isDirectory ? entry.name : '');
+      results.push(...collected);
+    }
+
+    addFileItems(results);
+    setReading(false);
+  }
+
+  function addFromInput(inputFiles, folderMode) {
+    const items = Array.from(inputFiles).filter(isImage).map(f => {
+      let folder = '';
+      if (folderMode && f.webkitRelativePath) {
+        const parts = f.webkitRelativePath.split('/');
+        folder = parts.slice(0, -1).join('/');
+      }
+      return { file: f, folder };
+    });
+    addFileItems(items);
+  }
+
+  function addFileItems(newItems) {
+    newItems.forEach(item => {
+      const key = item.file.name + '::' + item.file.size;
+      if (!files.find(x => x.file.name + '::' + x.file.size === key)) {
+        item.url = URL.createObjectURL(item.file);
+        files.push(item);
+      }
+    });
+    dupDismissed = false;
+    applySort();
+    refresh();
+  }
+
+  function setReading(on) {
+    readingMsg.style.display = on ? 'flex' : 'none';
+    dropZone.classList.toggle('reading', on);
+  }
+
+  // ── Sort ──────────────────────────────────────────────
+
+  function applySort() {
+    files.sort((a, b) => {
+      const na = a.file.name.toLowerCase();
+      const nb = b.file.name.toLowerCase();
+      return sortOrder === 'az' ? na.localeCompare(nb) : nb.localeCompare(na);
+    });
+  }
+
+  sortAzBtn.addEventListener('click', () => {
+    sortOrder = 'az';
+    sortAzBtn.classList.add('active');
+    sortZaBtn.classList.remove('active');
+    applySort();
     renderFileList();
+  });
+
+  sortZaBtn.addEventListener('click', () => {
+    sortOrder = 'za';
+    sortZaBtn.classList.add('active');
+    sortAzBtn.classList.remove('active');
+    applySort();
+    renderFileList();
+  });
+
+  // ── Duplicate detection ───────────────────────────────
+
+  function findDuplicates() {
+    const nameMap = {};
+    files.forEach((item, idx) => {
+      const n = item.file.name;
+      if (!nameMap[n]) nameMap[n] = [];
+      nameMap[n].push(idx);
+    });
+    return Object.entries(nameMap).filter(([, idxs]) => idxs.length > 1);
+  }
+
+  function renderDupWarning() {
+    const dups = findDuplicates();
+    if (!dups.length || dupDismissed) {
+      dupWarning.style.display = 'none';
+      return;
+    }
+    dupWarning.style.display = 'block';
+    dupTitle.textContent = dups.length === 1
+      ? '1 duplicate filename detected'
+      : dups.length + ' duplicate filenames detected';
+
+    dupListEl.innerHTML = '';
+    dups.slice(0, 5).forEach(([name, idxs]) => {
+      const paths = idxs.map(i => files[i].folder || '(root)').join(', ');
+      const row = document.createElement('div');
+      row.className = 'dup-row';
+      row.innerHTML = `<span class="dup-row-name">${escHtml(name)}</span>`
+        + `<span class="dup-row-paths">— found in: ${escHtml(paths)}</span>`;
+      dupListEl.appendChild(row);
+    });
+    if (dups.length > 5) {
+      const more = document.createElement('div');
+      more.className = 'dup-row';
+      more.style.color = 'var(--muted)';
+      more.textContent = '…and ' + (dups.length - 5) + ' more';
+      dupListEl.appendChild(more);
+    }
+  }
+
+  btnRmDups.addEventListener('click', () => {
+    const seen = new Set();
+    files = files.filter(item => {
+      if (seen.has(item.file.name)) return false;
+      seen.add(item.file.name);
+      return true;
+    });
+    dupDismissed = false;
+    refresh();
+  });
+
+  btnDismissDups.addEventListener('click', () => {
+    dupDismissed = true;
+    dupWarning.style.display = 'none';
+  });
+
+  // ── Rendering ─────────────────────────────────────────
+
+  function refresh() {
+    renderFileList();
+    renderDupWarning();
   }
 
   function renderFileList() {
-    fileList.innerHTML = '';
+    const dupNames = new Set(findDuplicates().map(([n]) => n));
+
+    fileListEl.innerHTML = '';
     files.forEach((item, idx) => {
-      const chip = document.createElement('div');
-      chip.className = 'file-chip';
-      chip.innerHTML = `<img src="${item.url}" alt="" /><span>${escHtml(item.file.name)}</span><span class="rm" data-idx="${idx}" title="Remove">✕</span>`;
-      fileList.appendChild(chip);
+      const isDup = dupNames.has(item.file.name);
+      const el    = document.createElement('div');
+      el.className = 'file-item' + (isDup ? ' is-dup' : '');
+
+      const folderHtml = item.folder
+        ? `<span class="file-folder"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escHtml(item.folder)}</span>`
+        : '';
+      const dupHtml = isDup
+        ? `<span class="dup-badge"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Duplicate</span>`
+        : '';
+
+      el.innerHTML = `
+        <img class="file-thumb" src="${item.url}" alt="" />
+        <div class="file-info">
+          <span class="file-name">${escHtml(item.file.name)}</span>
+          <span class="file-meta">${folderHtml}<span class="file-size">${formatSize(item.file.size)}</span></span>
+        </div>
+        ${dupHtml}
+        <button class="file-rm" data-idx="${idx}" title="Remove">✕</button>`;
+
+      fileListEl.appendChild(el);
     });
-    fileList.querySelectorAll('.rm').forEach(btn =>
+
+    fileListEl.querySelectorAll('.file-rm').forEach(btn =>
       btn.addEventListener('click', () => {
-        URL.revokeObjectURL(files[+btn.dataset.idx].url);
-        files.splice(+btn.dataset.idx, 1);
-        renderFileList();
+        const i = +btn.dataset.idx;
+        URL.revokeObjectURL(files[i].url);
+        files.splice(i, 1);
+        dupDismissed = false;
+        refresh();
       })
     );
+
+    const n = files.length;
+    fileCountEl.innerHTML = `<b>${n}</b> <span>image${n !== 1 ? 's' : ''} selected</span>`;
+    fileListWrap.style.display = n > 0 ? 'block' : 'none';
   }
 
-  // ── Attributes ──
+  // ── Event wiring ──────────────────────────────────────
+
+  browseBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
+  browseFolderBtn.addEventListener('click', e => { e.stopPropagation(); folderInput.click(); });
+  fileInput.addEventListener('change',   e => { addFromInput(e.target.files, false); fileInput.value = ''; });
+  folderInput.addEventListener('change', e => { addFromInput(e.target.files, true);  folderInput.value = ''; });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('dragover'); });
+  dropZone.addEventListener('drop', async e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    await addFromDrop(e.dataTransfer);
+  });
+  dropZone.addEventListener('click', e => {
+    if (browseBtn.contains(e.target) || browseFolderBtn.contains(e.target)) return;
+    fileInput.click();
+  });
+
+  // ── Attributes ────────────────────────────────────────
+
   function addAttrRow(name = '', desc = '') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -913,8 +1080,8 @@
 
   function getAttributes() {
     return Array.from(attrTbody.querySelectorAll('tr')).map(tr => {
-      const inputs = tr.querySelectorAll('input');
-      return { name: inputs[0].value.trim(), description: inputs[1].value.trim() };
+      const [a, b] = tr.querySelectorAll('input');
+      return { name: a.value.trim(), description: b.value.trim() };
     }).filter(a => a.name);
   }
 
@@ -922,14 +1089,15 @@
     return Array.from(document.querySelectorAll('input[name="fmt"]:checked')).map(cb => cb.value);
   }
 
-  // ── Process ──
+  // ── Process ───────────────────────────────────────────
+
   processBtn.addEventListener('click', startProcessing);
 
   function startProcessing() {
     hideAll();
-    if (files.length === 0)          { showError('Please upload at least one image.'); return; }
-    if (!getOutputFormats().length)  { showError('Please select at least one output format.'); return; }
-    if (!getAttributes().length)     { showError('Please add at least one attribute.'); return; }
+    if (!files.length)            { showError('Please upload at least one image.'); return; }
+    if (!getOutputFormats().length){ showError('Please select at least one output format.'); return; }
+    if (!getAttributes().length)  { showError('Please add at least one attribute.'); return; }
 
     processBtn.disabled = true;
     showProgress(0, files.length, 'Uploading files…');
@@ -956,14 +1124,15 @@
       .then(r => r.json())
       .then(data => {
         showProgress(data.progress, data.total, data.message);
-        if (data.status === 'done')  { clearTimeout(pollTimer); showResult(currentJobId, data.message); processBtn.disabled = false; }
-        else if (data.status === 'error') { clearTimeout(pollTimer); showError(data.message); processBtn.disabled = false; }
+        if (data.status === 'done')       { clearTimeout(pollTimer); showResult(currentJobId, data.message); processBtn.disabled = false; }
+        else if (data.status === 'error') { clearTimeout(pollTimer); showError(data.message);                processBtn.disabled = false; }
         else pollTimer = setTimeout(pollStatus, 2000);
       })
       .catch(() => { pollTimer = setTimeout(pollStatus, 3000); });
   }
 
-  // ── UI ──
+  // ── UI helpers ────────────────────────────────────────
+
   function hideAll() {
     progressCard.style.display = errorCard.style.display = resultCard.style.display = 'none';
     clearTimeout(pollTimer);
@@ -990,6 +1159,12 @@
     downloadBtn.href = '/download/' + jobId;
     resultMsg.textContent = msg;
     resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024)        return bytes + ' B';
+    if (bytes < 1048576)     return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
   }
 
   function escHtml(str) {
