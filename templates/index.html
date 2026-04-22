@@ -3,446 +3,840 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Attribute Checker — RGMC</title>
+  <title>Attribute Checker — RGMC Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
-    /* ── Design tokens ── */
+    /* ── Tokens ── */
     :root {
-      --navy:   #1B2A4A;
-      --navy-lt:#243760;
-      --sand:   #F5F0E8;
-      --ink:    #2C2C2C;
-      --muted:  #6B7280;
-      --border: #D9D3C9;
-      --white:  #FFFFFF;
-      --green:  #2D7A4F;
-      --red:    #C0392B;
-      --accent: #3E6DB5;
-      --radius: 8px;
+      --bg:        #FAF8F5;
+      --surface:   #FFFFFF;
+      --border:    #E8E2D9;
+      --border-lt: #F0EBE3;
+      --ink:       #1A1714;
+      --ink-2:     #44403C;
+      --muted:     #78716C;
+      --gold:      #9A6D2E;   /* RGMC logo gold */
+      --orange:    #D4700A;   /* Claude-style accent */
+      --orange-lt: #FEF3E2;
+      --green:     #15803D;
+      --green-lt:  #DCFCE7;
+      --red:       #DC2626;
+      --red-lt:    #FEF2F2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+      --shadow:    0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --r-sm:      6px;
+      --r:         12px;
+      --r-lg:      16px;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: var(--sand);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
       color: var(--ink);
       min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── Header ── */
+    /* ════════════════════════════════
+       HEADER
+    ════════════════════════════════ */
     header {
-      background: var(--navy);
-      color: var(--white);
-      padding: 18px 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
       display: flex;
       align-items: center;
-      gap: 14px;
-    }
-    header h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: .02em; }
-    header .badge {
-      background: var(--accent);
-      border-radius: 4px;
-      font-size: .7rem;
-      padding: 2px 7px;
-      letter-spacing: .05em;
-      text-transform: uppercase;
+      gap: 0;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
 
-    /* ── Layout ── */
-    main {
-      max-width: 960px;
-      margin: 32px auto;
-      padding: 0 20px 60px;
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+    .header-brand img {
+      height: 38px;
+      width: auto;
+      display: block;
+    }
+    .header-divider {
+      width: 1px;
+      height: 28px;
+      background: var(--border);
+      margin: 0 16px;
+    }
+    .header-title {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 1px;
+    }
+    .header-title h1 {
+      font-size: .95rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -.01em;
+    }
+    .header-title span {
+      font-size: .72rem;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .header-spacer { flex: 1; }
+    .header-badge {
+      background: var(--orange-lt);
+      color: var(--orange);
+      border: 1px solid rgba(212,112,10,.18);
+      border-radius: 20px;
+      font-size: .7rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
     }
 
-    /* ── Cards ── */
-    .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 24px;
+    /* ════════════════════════════════
+       PAGE LAYOUT
+    ════════════════════════════════ */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 36px 20px 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
     }
-    .card-title {
+
+    .page-header {
+      margin-bottom: 4px;
+    }
+    .page-header h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -.02em;
+    }
+    .page-header p {
+      font-size: .875rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ════════════════════════════════
+       CARDS / SECTIONS
+    ════════════════════════════════ */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .step-num {
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--orange);
+      color: #fff;
       font-size: .75rem;
       font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: var(--navy);
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid var(--sand);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      letter-spacing: 0;
+    }
+    .section-head-text h3 {
+      font-size: .875rem;
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: -.01em;
+    }
+    .section-head-text p {
+      font-size: .76rem;
+      color: var(--muted);
+      margin-top: 1px;
     }
 
-    /* ── Drop zone ── */
+    .section-body { padding: 22px; }
+
+    /* ════════════════════════════════
+       DROP ZONE
+    ════════════════════════════════ */
     #drop-zone {
       border: 2px dashed var(--border);
-      border-radius: var(--radius);
-      padding: 40px 24px;
+      border-radius: var(--r);
+      padding: 36px 24px;
       text-align: center;
       cursor: pointer;
-      transition: border-color .2s, background .2s;
+      transition: border-color .18s, background .18s;
+      background: var(--bg);
     }
-    #drop-zone.dragover { border-color: var(--accent); background: #EEF3FB; }
-    #drop-zone svg { width: 40px; height: 40px; stroke: var(--muted); margin-bottom: 10px; }
-    #drop-zone p { color: var(--muted); font-size: .9rem; }
-    #drop-zone strong { color: var(--ink); }
+    #drop-zone:hover,
+    #drop-zone.dragover {
+      border-color: var(--orange);
+      background: var(--orange-lt);
+    }
+    .upload-icon {
+      width: 44px; height: 44px;
+      background: var(--orange-lt);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 12px;
+    }
+    .upload-icon svg { width: 20px; height: 20px; stroke: var(--orange); }
+    #drop-zone p { font-size: .875rem; color: var(--muted); }
+    #drop-zone strong { color: var(--ink); font-weight: 600; }
     #file-input { display: none; }
-    #browse-btn {
-      display: inline-block;
-      margin-top: 10px;
-      background: var(--navy);
-      color: var(--white);
-      border: none;
-      border-radius: var(--radius);
-      padding: 8px 18px;
-      font-size: .85rem;
-      cursor: pointer;
-      transition: background .15s;
-    }
-    #browse-btn:hover { background: var(--navy-lt); }
 
-    /* ── File list ── */
+    #browse-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 12px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: var(--r-sm);
+      padding: 8px 18px;
+      font-size: .83rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .15s;
+    }
+    #browse-btn:hover { opacity: .88; }
+
+    /* File chips */
     #file-list {
-      margin-top: 14px;
+      margin-top: 16px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
     }
     .file-chip {
-      background: var(--sand);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 4px 10px 4px 8px;
-      font-size: .78rem;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 7px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 10px 5px 6px;
+      font-size: .78rem;
+      color: var(--ink-2);
+      box-shadow: var(--shadow-sm);
     }
     .file-chip img {
-      width: 22px; height: 22px;
+      width: 24px; height: 24px;
       object-fit: cover;
-      border-radius: 3px;
+      border-radius: 4px;
+      flex-shrink: 0;
     }
     .file-chip .rm {
       cursor: pointer;
       color: var(--muted);
-      font-weight: 700;
+      font-size: .9rem;
       line-height: 1;
+      margin-left: 2px;
+      transition: color .12s;
     }
     .file-chip .rm:hover { color: var(--red); }
 
-    /* ── Prompt ── */
-    .prompt-instruction {
-      background: #F0F4FA;
-      border-left: 3px solid var(--accent);
-      border-radius: 4px;
+    /* ════════════════════════════════
+       PROMPT SECTION
+    ════════════════════════════════ */
+    .instruction-box {
+      display: flex;
+      gap: 10px;
+      background: var(--orange-lt);
+      border: 1px solid rgba(212,112,10,.2);
+      border-radius: var(--r-sm);
       padding: 10px 14px;
-      font-size: .82rem;
-      color: var(--muted);
-      margin-bottom: 12px;
+      margin-bottom: 16px;
     }
-    .prompt-instruction strong { color: var(--navy); display: block; margin-bottom: 2px; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+    .instruction-box svg { flex-shrink: 0; margin-top: 2px; }
+    .instruction-box div { font-size: .8rem; color: var(--ink-2); line-height: 1.5; }
+    .instruction-box strong { display: block; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--orange); margin-bottom: 2px; font-weight: 700; }
+
+    label.field-label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      margin-bottom: 6px;
+      letter-spacing: .01em;
+    }
 
     textarea {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 10px 12px;
-      font-size: .85rem;
-      font-family: 'Courier New', monospace;
+      border-radius: var(--r-sm);
+      padding: 10px 13px;
+      font-size: .83rem;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
       resize: vertical;
       color: var(--ink);
-      background: var(--white);
-      line-height: 1.5;
+      background: var(--bg);
+      line-height: 1.6;
+      transition: border-color .15s, box-shadow .15s;
     }
-    textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,109,181,.12); }
-    .helper-text { font-size: .75rem; color: var(--muted); margin-top: 5px; }
+    textarea:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1);
+      background: var(--surface);
+    }
 
-    /* ── Attributes table ── */
+    .helper-text {
+      font-size: .74rem;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .helper-text code {
+      background: var(--border-lt);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: .72rem;
+      color: var(--orange);
+      font-family: monospace;
+    }
+
+    /* ════════════════════════════════
+       ATTRIBUTES TABLE
+    ════════════════════════════════ */
+    .attr-table-wrap {
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
     .attr-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: .85rem;
-      margin-bottom: 12px;
+      font-size: .83rem;
+    }
+    .attr-table thead tr {
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
     }
     .attr-table th {
       text-align: left;
-      padding: 7px 10px;
-      background: var(--sand);
-      border: 1px solid var(--border);
+      padding: 9px 12px;
+      font-size: .72rem;
       font-weight: 600;
-      font-size: .78rem;
-      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
     }
-    .attr-table td {
-      border: 1px solid var(--border);
-      padding: 0;
-    }
+    .attr-table td { border-top: 1px solid var(--border-lt); padding: 0; }
+    .attr-table tbody tr:first-child td { border-top: none; }
+    .attr-table tbody tr:hover td { background: var(--bg); }
     .attr-table td input {
       width: 100%;
       border: none;
-      padding: 7px 10px;
-      font-size: .85rem;
+      padding: 9px 12px;
+      font-size: .83rem;
       background: transparent;
       color: var(--ink);
+      font-family: inherit;
     }
-    .attr-table td input:focus { outline: none; background: #F0F4FA; }
-    .attr-table .td-rm { width: 36px; text-align: center; }
+    .attr-table td input:focus { outline: none; background: var(--orange-lt); }
+    .attr-table .td-rm { width: 44px; text-align: center; }
     .rm-attr {
       background: none;
       border: none;
       cursor: pointer;
       color: var(--muted);
-      font-size: 1rem;
-      padding: 4px 8px;
-      border-radius: 4px;
+      font-size: .82rem;
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background .12s, color .12s;
     }
-    .rm-attr:hover { color: var(--red); background: #FEF2F2; }
+    .rm-attr:hover { color: var(--red); background: var(--red-lt); }
 
     #add-attr-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       background: none;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 6px 14px;
+      border-radius: var(--r-sm);
+      padding: 7px 14px;
       font-size: .8rem;
-      cursor: pointer;
-      color: var(--navy);
-      transition: background .15s;
-    }
-    #add-attr-btn:hover { background: var(--sand); }
-
-    /* ── Output format ── */
-    .format-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .format-option {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .format-option input[type=checkbox] {
-      width: 16px; height: 16px;
-      accent-color: var(--navy);
-      cursor: pointer;
-    }
-    .format-label {
-      font-size: .88rem;
       font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--ink-2);
+      transition: background .12s, border-color .12s;
     }
-    .format-desc {
-      font-size: .75rem;
-      color: var(--muted);
-      display: block;
-    }
+    #add-attr-btn:hover { background: var(--bg); border-color: var(--orange); color: var(--orange); }
 
-    /* ── Process button ── */
+    /* ════════════════════════════════
+       OUTPUT FORMAT CARDS
+    ════════════════════════════════ */
+    .format-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .format-card {
+      position: relative;
+      cursor: pointer;
+    }
+    .format-card input[type=checkbox] {
+      position: absolute;
+      opacity: 0;
+      width: 0; height: 0;
+    }
+    .format-card-inner {
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px 16px;
+      transition: border-color .15s, background .15s, box-shadow .15s;
+      background: var(--surface);
+    }
+    .format-card input:checked ~ .format-card-inner {
+      border-color: var(--orange);
+      background: var(--orange-lt);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1);
+    }
+    .format-card-inner:hover { border-color: var(--orange); }
+
+    .format-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+      font-size: 1rem;
+    }
+    .fmt-xls .format-icon { background: #E8F5E9; }
+    .fmt-csv .format-icon { background: #E3F2FD; }
+    .fmt-txt .format-icon { background: #F3E5F5; }
+
+    .format-card-inner .fmt-name {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--ink);
+      display: block;
+      margin-bottom: 3px;
+    }
+    .format-card-inner .fmt-desc {
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .format-check {
+      position: absolute;
+      top: 10px; right: 10px;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      background: var(--surface);
+      transition: background .15s, border-color .15s;
+    }
+    .format-card input:checked ~ .format-card-inner .format-check {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+    .format-check svg { display: none; }
+    .format-card input:checked ~ .format-card-inner .format-check svg { display: block; }
+
+    /* ════════════════════════════════
+       PROCESS BUTTON
+    ════════════════════════════════ */
     #process-btn {
       width: 100%;
       padding: 14px;
-      background: var(--navy);
-      color: var(--white);
-      font-size: 1rem;
+      background: var(--orange);
+      color: #fff;
+      font-size: .95rem;
       font-weight: 600;
+      font-family: inherit;
       border: none;
-      border-radius: var(--radius);
+      border-radius: var(--r);
       cursor: pointer;
-      transition: background .15s;
-      letter-spacing: .02em;
+      transition: opacity .15s, transform .1s;
+      letter-spacing: -.01em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(212,112,10,.3);
     }
-    #process-btn:hover:not(:disabled) { background: var(--navy-lt); }
-    #process-btn:disabled { opacity: .6; cursor: not-allowed; }
+    #process-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    #process-btn:active:not(:disabled) { transform: translateY(0); }
+    #process-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
-    /* ── Progress ── */
+    /* ════════════════════════════════
+       PROGRESS
+    ════════════════════════════════ */
     #progress-card { display: none; }
-    .progress-bar-wrap {
-      background: var(--sand);
-      border-radius: 20px;
-      height: 10px;
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .progress-label {
+      font-size: .83rem;
+      font-weight: 600;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--orange);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #progress-pct {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--orange);
+    }
+    .progress-track {
+      background: var(--border-lt);
+      border-radius: 99px;
+      height: 8px;
       overflow: hidden;
       margin-bottom: 8px;
     }
-    .progress-bar-fill {
+    .progress-fill {
       height: 100%;
-      background: var(--accent);
-      border-radius: 20px;
+      background: linear-gradient(90deg, var(--orange), #F59E0B);
+      border-radius: 99px;
       width: 0%;
-      transition: width .3s ease;
+      transition: width .4s cubic-bezier(.4,0,.2,1);
     }
-    #progress-msg { font-size: .83rem; color: var(--muted); }
+    #progress-msg {
+      font-size: .78rem;
+      color: var(--muted);
+    }
 
-    /* ── Result ── */
+    /* ════════════════════════════════
+       RESULT
+    ════════════════════════════════ */
     #result-card { display: none; }
+    .result-inner {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .result-icon {
+      width: 44px; height: 44px;
+      background: var(--green-lt);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-icon svg { stroke: var(--green); }
+    .result-text h4 { font-size: .88rem; font-weight: 600; color: var(--ink); }
+    .result-text p { font-size: .78rem; color: var(--muted); margin-top: 2px; }
+
     #download-btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
+      margin-top: 14px;
       background: var(--green);
-      color: var(--white);
-      padding: 11px 22px;
-      border-radius: var(--radius);
-      font-size: .92rem;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: var(--r-sm);
+      font-size: .85rem;
       font-weight: 600;
       text-decoration: none;
       transition: opacity .15s;
+      box-shadow: 0 1px 3px rgba(21,128,61,.25);
     }
     #download-btn:hover { opacity: .88; }
-    #result-msg { font-size: .85rem; color: var(--muted); margin-top: 8px; }
 
-    /* ── Error ── */
-    #error-card {
-      display: none;
-      background: #FEF2F2;
-      border: 1px solid #FCA5A5;
+    /* ════════════════════════════════
+       ERROR
+    ════════════════════════════════ */
+    #error-card { display: none; }
+    .error-inner {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
     }
-    #error-msg { font-size: .88rem; color: var(--red); }
+    .error-icon {
+      width: 32px; height: 32px;
+      background: var(--red-lt);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .error-icon svg { stroke: var(--red); }
+    #error-msg {
+      font-size: .85rem;
+      color: var(--red);
+      padding-top: 6px;
+      line-height: 1.5;
+    }
 
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      main { padding: 0 12px 40px; }
-      .card { padding: 16px; }
+    /* ════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════ */
+    @media (max-width: 640px) {
+      header { padding: 0 16px; }
+      .header-badge { display: none; }
+      .page { padding: 24px 12px 60px; }
+      .section-body { padding: 16px; }
+      .section-head { padding: 14px 16px; }
+      .format-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
 
+<!-- ══ HEADER ══ -->
 <header>
-  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-    <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17 14v7m-3.5-3.5h7"/>
-  </svg>
-  <h1>Attribute Checker</h1>
-  <span class="badge">GPT Vision</span>
+  <a class="header-brand" href="/">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="RGMC Group" />
+  </a>
+  <div class="header-divider"></div>
+  <div class="header-title">
+    <h1>Attribute Checker</h1>
+    <span>Product description generator</span>
+  </div>
+  <div class="header-spacer"></div>
+  <span class="header-badge">GPT Vision</span>
 </header>
 
-<main>
+<!-- ══ MAIN ══ -->
+<div class="page">
 
-  <!-- Upload -->
-  <div class="card">
-    <div class="card-title">1 — Upload Images</div>
-    <div id="drop-zone" role="button" aria-label="Upload images">
-      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-        <path d="M12 16V4m0 0-4 4m4-4 4 4"/><path d="M4 20h16"/>
-      </svg>
-      <p><strong>Drag &amp; drop images here</strong></p>
-      <p>Supports JPG, JPEG, PNG, WEBP</p>
-      <button id="browse-btn" type="button">Browse Files</button>
+  <div class="page-header">
+    <h2>Generate Product Attributes</h2>
+    <p>Upload clothing images and let GPT Vision extract structured product data for your listings.</p>
+  </div>
+
+  <!-- 1 — Upload -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">1</div>
+      <div class="section-head-text">
+        <h3>Upload Images</h3>
+        <p>JPG, JPEG, PNG, WEBP supported</p>
+      </div>
     </div>
-    <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple />
-    <div id="file-list"></div>
-  </div>
-
-  <!-- Settings -->
-  <div class="card">
-    <div class="card-title">2 — Prompt Settings</div>
-
-    <div class="prompt-instruction">
-      <strong>Fixed Instruction (not editable)</strong>
-      {{ prompt_instruction }}
-    </div>
-
-    <label style="font-size:.82rem;font-weight:600;color:var(--navy);display:block;margin-bottom:6px;">
-      Prompt Template
-    </label>
-    <textarea id="prompt-template" rows="16">{{ prompt_template }}</textarea>
-    <p class="helper-text">
-      Use <code>{{ATTRIBUTES}}</code> as a placeholder — it will be replaced with the attribute list below when processing.
-    </p>
-  </div>
-
-  <!-- Attributes -->
-  <div class="card">
-    <div class="card-title">3 — Attributes</div>
-    <table class="attr-table" id="attr-table">
-      <thead>
-        <tr>
-          <th style="width:30%">Attribute Name</th>
-          <th>Description (guides the AI)</th>
-          <th class="td-rm"></th>
-        </tr>
-      </thead>
-      <tbody id="attr-tbody"></tbody>
-    </table>
-    <button id="add-attr-btn" type="button">+ Add Attribute</button>
-  </div>
-
-  <!-- Output Format -->
-  <div class="card">
-    <div class="card-title">4 — Output Format</div>
-    <div class="format-group">
-      <label class="format-option">
-        <input type="checkbox" name="fmt" value="xls" checked />
-        <span>
-          <span class="format-label">Excel (.xlsx)</span>
-          <span class="format-desc">Embedded thumbnails · all attributes as columns</span>
-        </span>
-      </label>
-      <label class="format-option">
-        <input type="checkbox" name="fmt" value="csv" />
-        <span>
-          <span class="format-label">CSV (.csv)</span>
-          <span class="format-desc">Filename instead of image · same column structure</span>
-        </span>
-      </label>
-      <label class="format-option">
-        <input type="checkbox" name="fmt" value="txt" />
-        <span>
-          <span class="format-label">Text files (.txt)</span>
-          <span class="format-desc">One file per product · named after product title</span>
-        </span>
-      </label>
+    <div class="section-body">
+      <div id="drop-zone" role="button" aria-label="Upload images">
+        <div class="upload-icon">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 15V3m0 0L8 7m4-4 4 4"/><path d="M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"/>
+          </svg>
+        </div>
+        <p><strong>Drag &amp; drop images here</strong></p>
+        <p style="margin-top:4px;font-size:.8rem;">or click to browse from your computer</p>
+        <button id="browse-btn" type="button">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Choose Files
+        </button>
+      </div>
+      <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple />
+      <div id="file-list"></div>
     </div>
   </div>
 
-  <!-- Process -->
-  <button id="process-btn" type="button">Generate Attributes</button>
+  <!-- 2 — Prompt -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">2</div>
+      <div class="section-head-text">
+        <h3>Prompt Template</h3>
+        <p>Customize the format sent to GPT Vision</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="instruction-box">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-top:2px;flex-shrink:0;stroke:var(--orange)">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <div>
+          <strong>Fixed Instruction — not editable</strong>
+          {{ prompt_instruction }}
+        </div>
+      </div>
+
+      <label class="field-label" for="prompt-template">Prompt Template</label>
+      <textarea id="prompt-template" rows="15">{{ prompt_template }}</textarea>
+      <p class="helper-text">
+        Place <code>{{ATTRIBUTES}}</code> where the attribute list should appear. It will be replaced automatically when processing.
+      </p>
+    </div>
+  </div>
+
+  <!-- 3 — Attributes -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">3</div>
+      <div class="section-head-text">
+        <h3>Attributes</h3>
+        <p>Define what GPT should extract from each image</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="attr-table-wrap">
+        <table class="attr-table" id="attr-table">
+          <thead>
+            <tr>
+              <th style="width:32%">Attribute Name</th>
+              <th>Description — guides the AI response</th>
+              <th class="td-rm"></th>
+            </tr>
+          </thead>
+          <tbody id="attr-tbody"></tbody>
+        </table>
+      </div>
+      <button id="add-attr-btn" type="button">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Attribute
+      </button>
+    </div>
+  </div>
+
+  <!-- 4 — Output Format -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">4</div>
+      <div class="section-head-text">
+        <h3>Output Format</h3>
+        <p>Select one or more file types to generate</p>
+      </div>
+    </div>
+    <div class="section-body">
+      <div class="format-grid">
+
+        <label class="format-card fmt-xls">
+          <input type="checkbox" name="fmt" value="xls" checked />
+          <div class="format-card-inner">
+            <div class="format-check">
+              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="format-icon">📊</div>
+            <span class="fmt-name">Excel (.xlsx)</span>
+            <span class="fmt-desc">Embedded thumbnails with all attributes as columns</span>
+          </div>
+        </label>
+
+        <label class="format-card fmt-csv">
+          <input type="checkbox" name="fmt" value="csv" />
+          <div class="format-card-inner">
+            <div class="format-check">
+              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="format-icon">📋</div>
+            <span class="fmt-name">CSV (.csv)</span>
+            <span class="fmt-desc">Filename column instead of image, same structure</span>
+          </div>
+        </label>
+
+        <label class="format-card fmt-txt">
+          <input type="checkbox" name="fmt" value="txt" />
+          <div class="format-card-inner">
+            <div class="format-check">
+              <svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="format-icon">📄</div>
+            <span class="fmt-name">Text files (.txt)</span>
+            <span class="fmt-desc">One file per product, named after the product title</span>
+          </div>
+        </label>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Process button -->
+  <button id="process-btn" type="button">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Generate Attributes
+  </button>
 
   <!-- Progress -->
-  <div class="card" id="progress-card">
-    <div class="card-title">Processing…</div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progress-fill"></div>
+  <div class="section" id="progress-card">
+    <div class="section-body">
+      <div class="progress-header">
+        <span class="progress-label">
+          <span class="spinner"></span>
+          Processing images…
+        </span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p id="progress-msg">Starting…</p>
     </div>
-    <p id="progress-msg">Starting…</p>
   </div>
 
   <!-- Error -->
-  <div class="card" id="error-card">
-    <div class="card-title" style="color:var(--red)">Error</div>
-    <p id="error-msg"></p>
+  <div class="section" id="error-card" style="border-color:#FCA5A5;background:var(--red-lt);">
+    <div class="section-body">
+      <div class="error-inner">
+        <div class="error-icon">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </div>
+        <p id="error-msg"></p>
+      </div>
+    </div>
   </div>
 
   <!-- Result -->
-  <div class="card" id="result-card">
-    <div class="card-title">✓ Done</div>
-    <a id="download-btn" href="#" download>
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M12 4v12m0 0-4-4m4 4 4-4"/><path d="M4 20h16"/>
-      </svg>
-      Download Results (.zip)
-    </a>
-    <p id="result-msg"></p>
+  <div class="section" id="result-card" style="border-color:#86EFAC;">
+    <div class="section-body">
+      <div class="result-inner">
+        <div class="result-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <div class="result-text">
+          <h4>Processing complete</h4>
+          <p id="result-msg"></p>
+        </div>
+      </div>
+      <a id="download-btn" href="#" download>
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download Results (.zip)
+      </a>
+    </div>
   </div>
 
-</main>
+</div><!-- /page -->
 
 <script>
 (function () {
-  // ── State ──
-  const files = [];   // {file: File, url: string}
+  const files = [];
   let currentJobId = null;
   let pollTimer    = null;
 
-  // ── Default attributes injected from server ──
   const DEFAULT_ATTRS = {{ default_attributes | safe }};
 
-  // ── DOM refs ──
   const dropZone     = document.getElementById('drop-zone');
   const fileInput    = document.getElementById('file-input');
   const browseBtn    = document.getElementById('browse-btn');
@@ -453,6 +847,7 @@
   const processBtn   = document.getElementById('process-btn');
   const progressCard = document.getElementById('progress-card');
   const progressFill = document.getElementById('progress-fill');
+  const progressPct  = document.getElementById('progress-pct');
   const progressMsg  = document.getElementById('progress-msg');
   const errorCard    = document.getElementById('error-card');
   const errorMsg     = document.getElementById('error-msg');
@@ -460,28 +855,29 @@
   const downloadBtn  = document.getElementById('download-btn');
   const resultMsg    = document.getElementById('result-msg');
 
-  // ── Init attributes ──
   DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
 
   // ── File handling ──
-  browseBtn.addEventListener('click', () => fileInput.click());
+  browseBtn.addEventListener('click', e => { e.stopPropagation(); fileInput.click(); });
   fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
 
   dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('dragover'); });
   dropZone.addEventListener('drop', e => {
     e.preventDefault();
     dropZone.classList.remove('dragover');
     addFiles(Array.from(e.dataTransfer.files));
   });
-  dropZone.addEventListener('click', e => { if (e.target === dropZone || e.target.tagName === 'P' || e.target.tagName === 'SVG') fileInput.click(); });
+  dropZone.addEventListener('click', e => {
+    if (e.target === browseBtn || browseBtn.contains(e.target)) return;
+    fileInput.click();
+  });
 
   function addFiles(newFiles) {
     const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     newFiles.filter(f => allowed.includes(f.type)).forEach(f => {
-      if (!files.find(x => x.file.name === f.name && x.file.size === f.size)) {
+      if (!files.find(x => x.file.name === f.name && x.file.size === f.size))
         files.push({ file: f, url: URL.createObjectURL(f) });
-      }
     });
     renderFileList();
   }
@@ -491,7 +887,7 @@
     files.forEach((item, idx) => {
       const chip = document.createElement('div');
       chip.className = 'file-chip';
-      chip.innerHTML = `<img src="${item.url}" alt="" />${escHtml(item.file.name)}<span class="rm" data-idx="${idx}" title="Remove">×</span>`;
+      chip.innerHTML = `<img src="${item.url}" alt="" /><span>${escHtml(item.file.name)}</span><span class="rm" data-idx="${idx}" title="Remove">✕</span>`;
       fileList.appendChild(chip);
     });
     fileList.querySelectorAll('.rm').forEach(btn =>
@@ -503,13 +899,13 @@
     );
   }
 
-  // ── Attribute rows ──
+  // ── Attributes ──
   function addAttrRow(name = '', desc = '') {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="text" placeholder="e.g. Color" value="${escHtml(name)}" /></td>
       <td><input type="text" placeholder="e.g. Main visible color of the garment" value="${escHtml(desc)}" /></td>
-      <td class="td-rm"><button class="rm-attr" title="Remove row">✕</button></td>`;
+      <td class="td-rm"><button class="rm-attr" title="Remove">✕</button></td>`;
     tr.querySelector('.rm-attr').addEventListener('click', () => tr.remove());
     attrTbody.appendChild(tr);
   }
@@ -531,23 +927,18 @@
 
   function startProcessing() {
     hideAll();
-
-    if (files.length === 0) { showError('Please upload at least one image.'); return; }
-
-    const formats = getOutputFormats();
-    if (formats.length === 0) { showError('Please select at least one output format.'); return; }
-
-    const attrs = getAttributes();
-    if (attrs.length === 0) { showError('Please add at least one attribute.'); return; }
+    if (files.length === 0)          { showError('Please upload at least one image.'); return; }
+    if (!getOutputFormats().length)  { showError('Please select at least one output format.'); return; }
+    if (!getAttributes().length)     { showError('Please add at least one attribute.'); return; }
 
     processBtn.disabled = true;
     showProgress(0, files.length, 'Uploading files…');
 
     const fd = new FormData();
     files.forEach(item => fd.append('images', item.file));
-    fd.append('attributes',      JSON.stringify(attrs));
+    fd.append('attributes',      JSON.stringify(getAttributes()));
     fd.append('prompt_template', promptTA.value);
-    fd.append('output_formats',  JSON.stringify(formats));
+    fd.append('output_formats',  JSON.stringify(getOutputFormats()));
 
     fetch('/process', { method: 'POST', body: fd })
       .then(r => r.json())
@@ -565,51 +956,40 @@
       .then(r => r.json())
       .then(data => {
         showProgress(data.progress, data.total, data.message);
-
-        if (data.status === 'done') {
-          clearTimeout(pollTimer);
-          showResult(currentJobId, data.message);
-          processBtn.disabled = false;
-        } else if (data.status === 'error') {
-          clearTimeout(pollTimer);
-          showError(data.message);
-          processBtn.disabled = false;
-        } else {
-          pollTimer = setTimeout(pollStatus, 2000);
-        }
+        if (data.status === 'done')  { clearTimeout(pollTimer); showResult(currentJobId, data.message); processBtn.disabled = false; }
+        else if (data.status === 'error') { clearTimeout(pollTimer); showError(data.message); processBtn.disabled = false; }
+        else pollTimer = setTimeout(pollStatus, 2000);
       })
       .catch(() => { pollTimer = setTimeout(pollStatus, 3000); });
   }
 
-  // ── UI helpers ──
+  // ── UI ──
   function hideAll() {
-    progressCard.style.display = 'none';
-    errorCard.style.display    = 'none';
-    resultCard.style.display   = 'none';
+    progressCard.style.display = errorCard.style.display = resultCard.style.display = 'none';
     clearTimeout(pollTimer);
   }
 
   function showProgress(current, total, msg) {
     progressCard.style.display = 'block';
-    errorCard.style.display    = 'none';
-    resultCard.style.display   = 'none';
+    errorCard.style.display = resultCard.style.display = 'none';
     const pct = total > 0 ? Math.round((current / total) * 100) : 0;
     progressFill.style.width = pct + '%';
-    progressMsg.textContent  = msg + (total > 0 ? ' (' + current + '/' + total + ')' : '');
+    progressPct.textContent  = pct + '%';
+    progressMsg.textContent  = msg;
   }
 
   function showError(msg) {
-    errorCard.style.display    = 'block';
-    progressCard.style.display = 'none';
-    resultCard.style.display   = 'none';
+    errorCard.style.display = 'block';
+    progressCard.style.display = resultCard.style.display = 'none';
     errorMsg.textContent = msg;
   }
 
   function showResult(jobId, msg) {
-    resultCard.style.display   = 'block';
+    resultCard.style.display = 'block';
     progressCard.style.display = 'none';
     downloadBtn.href = '/download/' + jobId;
     resultMsg.textContent = msg;
+    resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function escHtml(str) {
