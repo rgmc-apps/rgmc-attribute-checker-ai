@@ -1,0 +1,12 @@
+.git
+.claude
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+program-logs/
+*.log
+*.exe
+*.bat
+*.ico

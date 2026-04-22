@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Attribute Checker — RGMC</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --navy:   #1B2A4A;
+      --navy-lt:#243760;
+      --sand:   #F5F0E8;
+      --ink:    #2C2C2C;
+      --muted:  #6B7280;
+      --border: #D9D3C9;
+      --white:  #FFFFFF;
+      --green:  #2D7A4F;
+      --red:    #C0392B;
+      --accent: #3E6DB5;
+      --radius: 8px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--sand);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--navy);
+      color: var(--white);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header h1 { font-size: 1.35rem; font-weight: 600; letter-spacing: .02em; }
+    header .badge {
+      background: var(--accent);
+      border-radius: 4px;
+      font-size: .7rem;
+      padding: 2px 7px;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 960px;
+      margin: 32px auto;
+      padding: 0 20px 60px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .card-title {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--navy);
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--sand);
+    }
+
+    /* ── Drop zone ── */
+    #drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+    }
+    #drop-zone.dragover { border-color: var(--accent); background: #EEF3FB; }
+    #drop-zone svg { width: 40px; height: 40px; stroke: var(--muted); margin-bottom: 10px; }
+    #drop-zone p { color: var(--muted); font-size: .9rem; }
+    #drop-zone strong { color: var(--ink); }
+    #file-input { display: none; }
+    #browse-btn {
+      display: inline-block;
+      margin-top: 10px;
+      background: var(--navy);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      padding: 8px 18px;
+      font-size: .85rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    #browse-btn:hover { background: var(--navy-lt); }
+
+    /* ── File list ── */
+    #file-list {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .file-chip {
+      background: var(--sand);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 10px 4px 8px;
+      font-size: .78rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .file-chip img {
+      width: 22px; height: 22px;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+    .file-chip .rm {
+      cursor: pointer;
+      color: var(--muted);
+      font-weight: 700;
+      line-height: 1;
+    }
+    .file-chip .rm:hover { color: var(--red); }
+
+    /* ── Prompt ── */
+    .prompt-instruction {
+      background: #F0F4FA;
+      border-left: 3px solid var(--accent);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-size: .82rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .prompt-instruction strong { color: var(--navy); display: block; margin-bottom: 2px; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+
+    textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 12px;
+      font-size: .85rem;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      color: var(--ink);
+      background: var(--white);
+      line-height: 1.5;
+    }
+    textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,109,181,.12); }
+    .helper-text { font-size: .75rem; color: var(--muted); margin-top: 5px; }
+
+    /* ── Attributes table ── */
+    .attr-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .85rem;
+      margin-bottom: 12px;
+    }
+    .attr-table th {
+      text-align: left;
+      padding: 7px 10px;
+      background: var(--sand);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      font-size: .78rem;
+      color: var(--navy);
+    }
+    .attr-table td {
+      border: 1px solid var(--border);
+      padding: 0;
+    }
+    .attr-table td input {
+      width: 100%;
+      border: none;
+      padding: 7px 10px;
+      font-size: .85rem;
+      background: transparent;
+      color: var(--ink);
+    }
+    .attr-table td input:focus { outline: none; background: #F0F4FA; }
+    .attr-table .td-rm { width: 36px; text-align: center; }
+    .rm-attr {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 1rem;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    .rm-attr:hover { color: var(--red); background: #FEF2F2; }
+
+    #add-attr-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 6px 14px;
+      font-size: .8rem;
+      cursor: pointer;
+      color: var(--navy);
+      transition: background .15s;
+    }
+    #add-attr-btn:hover { background: var(--sand); }
+
+    /* ── Output format ── */
+    .format-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .format-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .format-option input[type=checkbox] {
+      width: 16px; height: 16px;
+      accent-color: var(--navy);
+      cursor: pointer;
+    }
+    .format-label {
+      font-size: .88rem;
+      font-weight: 500;
+    }
+    .format-desc {
+      font-size: .75rem;
+      color: var(--muted);
+      display: block;
+    }
+
+    /* ── Process button ── */
+    #process-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--navy);
+      color: var(--white);
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background .15s;
+      letter-spacing: .02em;
+    }
+    #process-btn:hover:not(:disabled) { background: var(--navy-lt); }
+    #process-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── Progress ── */
+    #progress-card { display: none; }
+    .progress-bar-wrap {
+      background: var(--sand);
+      border-radius: 20px;
+      height: 10px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 20px;
+      width: 0%;
+      transition: width .3s ease;
+    }
+    #progress-msg { font-size: .83rem; color: var(--muted); }
+
+    /* ── Result ── */
+    #result-card { display: none; }
+    #download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--green);
+      color: var(--white);
+      padding: 11px 22px;
+      border-radius: var(--radius);
+      font-size: .92rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity .15s;
+    }
+    #download-btn:hover { opacity: .88; }
+    #result-msg { font-size: .85rem; color: var(--muted); margin-top: 8px; }
+
+    /* ── Error ── */
+    #error-card {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
+    }
+    #error-msg { font-size: .88rem; color: var(--red); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      main { padding: 0 12px 40px; }
+      .card { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M17 14v7m-3.5-3.5h7"/>
+  </svg>
+  <h1>Attribute Checker</h1>
+  <span class="badge">GPT Vision</span>
+</header>
+
+<main>
+
+  <!-- Upload -->
+  <div class="card">
+    <div class="card-title">1 — Upload Images</div>
+    <div id="drop-zone" role="button" aria-label="Upload images">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path d="M12 16V4m0 0-4 4m4-4 4 4"/><path d="M4 20h16"/>
+      </svg>
+      <p><strong>Drag &amp; drop images here</strong></p>
+      <p>Supports JPG, JPEG, PNG, WEBP</p>
+      <button id="browse-btn" type="button">Browse Files</button>
+    </div>
+    <input id="file-input" type="file" accept=".jpg,.jpeg,.png,.webp" multiple />
+    <div id="file-list"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="card">
+    <div class="card-title">2 — Prompt Settings</div>
+
+    <div class="prompt-instruction">
+      <strong>Fixed Instruction (not editable)</strong>
+      {{ prompt_instruction }}
+    </div>
+
+    <label style="font-size:.82rem;font-weight:600;color:var(--navy);display:block;margin-bottom:6px;">
+      Prompt Template
+    </label>
+    <textarea id="prompt-template" rows="16">{{ prompt_template }}</textarea>
+    <p class="helper-text">
+      Use <code>{{ATTRIBUTES}}</code> as a placeholder — it will be replaced with the attribute list below when processing.
+    </p>
+  </div>
+
+  <!-- Attributes -->
+  <div class="card">
+    <div class="card-title">3 — Attributes</div>
+    <table class="attr-table" id="attr-table">
+      <thead>
+        <tr>
+          <th style="width:30%">Attribute Name</th>
+          <th>Description (guides the AI)</th>
+          <th class="td-rm"></th>
+        </tr>
+      </thead>
+      <tbody id="attr-tbody"></tbody>
+    </table>
+    <button id="add-attr-btn" type="button">+ Add Attribute</button>
+  </div>
+
+  <!-- Output Format -->
+  <div class="card">
+    <div class="card-title">4 — Output Format</div>
+    <div class="format-group">
+      <label class="format-option">
+        <input type="checkbox" name="fmt" value="xls" checked />
+        <span>
+          <span class="format-label">Excel (.xlsx)</span>
+          <span class="format-desc">Embedded thumbnails · all attributes as columns</span>
+        </span>
+      </label>
+      <label class="format-option">
+        <input type="checkbox" name="fmt" value="csv" />
+        <span>
+          <span class="format-label">CSV (.csv)</span>
+          <span class="format-desc">Filename instead of image · same column structure</span>
+        </span>
+      </label>
+      <label class="format-option">
+        <input type="checkbox" name="fmt" value="txt" />
+        <span>
+          <span class="format-label">Text files (.txt)</span>
+          <span class="format-desc">One file per product · named after product title</span>
+        </span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Process -->
+  <button id="process-btn" type="button">Generate Attributes</button>
+
+  <!-- Progress -->
+  <div class="card" id="progress-card">
+    <div class="card-title">Processing…</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill"></div>
+    </div>
+    <p id="progress-msg">Starting…</p>
+  </div>
+
+  <!-- Error -->
+  <div class="card" id="error-card">
+    <div class="card-title" style="color:var(--red)">Error</div>
+    <p id="error-msg"></p>
+  </div>
+
+  <!-- Result -->
+  <div class="card" id="result-card">
+    <div class="card-title">✓ Done</div>
+    <a id="download-btn" href="#" download>
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 4v12m0 0-4-4m4 4 4-4"/><path d="M4 20h16"/>
+      </svg>
+      Download Results (.zip)
+    </a>
+    <p id="result-msg"></p>
+  </div>
+
+</main>
+
+<script>
+(function () {
+  // ── State ──
+  const files = [];   // {file: File, url: string}
+  let currentJobId = null;
+  let pollTimer    = null;
+
+  // ── Default attributes injected from server ──
+  const DEFAULT_ATTRS = {{ default_attributes | safe }};
+
+  // ── DOM refs ──
+  const dropZone     = document.getElementById('drop-zone');
+  const fileInput    = document.getElementById('file-input');
+  const browseBtn    = document.getElementById('browse-btn');
+  const fileList     = document.getElementById('file-list');
+  const attrTbody    = document.getElementById('attr-tbody');
+  const addAttrBtn   = document.getElementById('add-attr-btn');
+  const promptTA     = document.getElementById('prompt-template');
+  const processBtn   = document.getElementById('process-btn');
+  const progressCard = document.getElementById('progress-card');
+  const progressFill = document.getElementById('progress-fill');
+  const progressMsg  = document.getElementById('progress-msg');
+  const errorCard    = document.getElementById('error-card');
+  const errorMsg     = document.getElementById('error-msg');
+  const resultCard   = document.getElementById('result-card');
+  const downloadBtn  = document.getElementById('download-btn');
+  const resultMsg    = document.getElementById('result-msg');
+
+  // ── Init attributes ──
+  DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
+
+  // ── File handling ──
+  browseBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    addFiles(Array.from(e.dataTransfer.files));
+  });
+  dropZone.addEventListener('click', e => { if (e.target === dropZone || e.target.tagName === 'P' || e.target.tagName === 'SVG') fileInput.click(); });
+
+  function addFiles(newFiles) {
+    const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    newFiles.filter(f => allowed.includes(f.type)).forEach(f => {
+      if (!files.find(x => x.file.name === f.name && x.file.size === f.size)) {
+        files.push({ file: f, url: URL.createObjectURL(f) });
+      }
+    });
+    renderFileList();
+  }
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    files.forEach((item, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'file-chip';
+      chip.innerHTML = `<img src="${item.url}" alt="" />${escHtml(item.file.name)}<span class="rm" data-idx="${idx}" title="Remove">×</span>`;
+      fileList.appendChild(chip);
+    });
+    fileList.querySelectorAll('.rm').forEach(btn =>
+      btn.addEventListener('click', () => {
+        URL.revokeObjectURL(files[+btn.dataset.idx].url);
+        files.splice(+btn.dataset.idx, 1);
+        renderFileList();
+      })
+    );
+  }
+
+  // ── Attribute rows ──
+  function addAttrRow(name = '', desc = '') {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" placeholder="e.g. Color" value="${escHtml(name)}" /></td>
+      <td><input type="text" placeholder="e.g. Main visible color of the garment" value="${escHtml(desc)}" /></td>
+      <td class="td-rm"><button class="rm-attr" title="Remove row">✕</button></td>`;
+    tr.querySelector('.rm-attr').addEventListener('click', () => tr.remove());
+    attrTbody.appendChild(tr);
+  }
+  addAttrBtn.addEventListener('click', () => addAttrRow());
+
+  function getAttributes() {
+    return Array.from(attrTbody.querySelectorAll('tr')).map(tr => {
+      const inputs = tr.querySelectorAll('input');
+      return { name: inputs[0].value.trim(), description: inputs[1].value.trim() };
+    }).filter(a => a.name);
+  }
+
+  function getOutputFormats() {
+    return Array.from(document.querySelectorAll('input[name="fmt"]:checked')).map(cb => cb.value);
+  }
+
+  // ── Process ──
+  processBtn.addEventListener('click', startProcessing);
+
+  function startProcessing() {
+    hideAll();
+
+    if (files.length === 0) { showError('Please upload at least one image.'); return; }
+
+    const formats = getOutputFormats();
+    if (formats.length === 0) { showError('Please select at least one output format.'); return; }
+
+    const attrs = getAttributes();
+    if (attrs.length === 0) { showError('Please add at least one attribute.'); return; }
+
+    processBtn.disabled = true;
+    showProgress(0, files.length, 'Uploading files…');
+
+    const fd = new FormData();
+    files.forEach(item => fd.append('images', item.file));
+    fd.append('attributes',      JSON.stringify(attrs));
+    fd.append('prompt_template', promptTA.value);
+    fd.append('output_formats',  JSON.stringify(formats));
+
+    fetch('/process', { method: 'POST', body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.error) { showError(data.error); processBtn.disabled = false; return; }
+        currentJobId = data.job_id;
+        pollStatus();
+      })
+      .catch(err => { showError('Upload failed: ' + err.message); processBtn.disabled = false; });
+  }
+
+  function pollStatus() {
+    if (!currentJobId) return;
+    fetch('/status/' + currentJobId)
+      .then(r => r.json())
+      .then(data => {
+        showProgress(data.progress, data.total, data.message);
+
+        if (data.status === 'done') {
+          clearTimeout(pollTimer);
+          showResult(currentJobId, data.message);
+          processBtn.disabled = false;
+        } else if (data.status === 'error') {
+          clearTimeout(pollTimer);
+          showError(data.message);
+          processBtn.disabled = false;
+        } else {
+          pollTimer = setTimeout(pollStatus, 2000);
+        }
+      })
+      .catch(() => { pollTimer = setTimeout(pollStatus, 3000); });
+  }
+
+  // ── UI helpers ──
+  function hideAll() {
+    progressCard.style.display = 'none';
+    errorCard.style.display    = 'none';
+    resultCard.style.display   = 'none';
+    clearTimeout(pollTimer);
+  }
+
+  function showProgress(current, total, msg) {
+    progressCard.style.display = 'block';
+    errorCard.style.display    = 'none';
+    resultCard.style.display   = 'none';
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    progressFill.style.width = pct + '%';
+    progressMsg.textContent  = msg + (total > 0 ? ' (' + current + '/' + total + ')' : '');
+  }
+
+  function showError(msg) {
+    errorCard.style.display    = 'block';
+    progressCard.style.display = 'none';
+    resultCard.style.display   = 'none';
+    errorMsg.textContent = msg;
+  }
+
+  function showResult(jobId, msg) {
+    resultCard.style.display   = 'block';
+    progressCard.style.display = 'none';
+    downloadBtn.href = '/download/' + jobId;
+    resultMsg.textContent = msg;
+  }
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+})();
+</script>
+
+</body>
+</html>

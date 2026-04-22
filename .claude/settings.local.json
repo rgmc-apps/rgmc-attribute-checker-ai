@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(python -m py_compile main.py)",
+      "Bash(python -m py_compile helper/attribute_generator.py)",
+      "Bash(python -m py_compile logger/__init__.py)",
+      "Bash(python3 -m py_compile main.py)",
+      "Bash(python3 -m py_compile helper/attribute_generator.py)",
+      "Bash(python3 -m py_compile logger/__init__.py)",
+      "Bash(where py *)",
+      "Bash(where python3.exe)",
+      "Read(//usr/**)",
+      "Bash(py --version)",
+      "Bash(py -m py_compile main.py)",
+      "Bash(py -m py_compile helper/attribute_generator.py)",
+      "Bash(py -m py_compile logger/__init__.py)"
+    ]
+  }
+}
