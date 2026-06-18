@@ -106,11 +106,12 @@
       border-bottom: 1px solid var(--border-lt);
     }
     .step-num {
-      width: 26px; height: 26px; border-radius: 50%;
+      width: 30px; height: 30px; border-radius: 50%;
       background: var(--orange); color: #fff;
-      font-size: .75rem; font-weight: 700;
+      font-size: .76rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(212,112,10,.3);
     }
     .section-head-text h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
     .section-head-text p { font-size: .76rem; color: var(--muted); margin-top: 1px; }
@@ -529,11 +530,12 @@
     /* ════════════════════════════════
        OUTPUT FORMAT CARDS
     ════════════════════════════════ */
-    .format-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .format-card { position: relative; cursor: pointer; }
+    .format-grid { display: flex; flex-direction: column; gap: 7px; }
+    .format-card { cursor: pointer; }
     .format-card input[type=checkbox] { position: absolute; opacity: 0; width: 0; height: 0; }
     .format-card-inner {
-      border: 1.5px solid var(--border); border-radius: var(--r); padding: 14px 16px;
+      border: 1.5px solid var(--border); border-radius: var(--r-sm); padding: 11px 14px;
+      display: flex; align-items: center; gap: 13px;
       transition: border-color .15s, background .15s, box-shadow .15s; background: var(--surface);
     }
     .format-card input:checked ~ .format-card-inner {
@@ -542,21 +544,22 @@
     }
     .format-card-inner:hover { border-color: var(--orange); }
     .format-icon {
-      width: 32px; height: 32px; border-radius: 8px;
+      width: 34px; height: 34px; border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 10px; font-size: 1rem;
+      flex-shrink: 0;
     }
     .fmt-xls .format-icon { background: #E8F5E9; }
     .fmt-csv .format-icon { background: #E3F2FD; }
     .fmt-txt .format-icon { background: #F3E5F5; }
-    .format-card-inner .fmt-name { font-size: .82rem; font-weight: 600; color: var(--ink); display: block; margin-bottom: 3px; }
-    .format-card-inner .fmt-desc { font-size: .72rem; color: var(--muted); line-height: 1.4; }
+    .format-card-content { flex: 1; min-width: 0; }
+    .format-card-inner .fmt-name { font-size: .83rem; font-weight: 600; color: var(--ink); display: block; }
+    .format-card-inner .fmt-desc { font-size: .72rem; color: var(--muted); line-height: 1.4; display: block; margin-top: 1px; }
     .format-check {
-      position: absolute; top: 10px; right: 10px;
       width: 18px; height: 18px; border-radius: 50%;
       border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
       background: var(--surface); transition: background .15s, border-color .15s;
+      flex-shrink: 0;
     }
     .format-card input:checked ~ .format-card-inner .format-check { background: var(--orange); border-color: var(--orange); }
     .format-check svg { display: none; }
@@ -569,12 +572,25 @@
       width: 100%; padding: 14px; background: var(--orange); color: #fff;
       font-size: .95rem; font-weight: 600; font-family: inherit; border: none;
       border-radius: var(--r); cursor: pointer;
-      transition: opacity .15s, transform .1s; letter-spacing: -.01em;
+      transition: opacity .15s, transform .12s, box-shadow .15s; letter-spacing: -.01em;
       display: flex; align-items: center; justify-content: center; gap: 8px;
       box-shadow: 0 1px 3px rgba(212,112,10,.3);
+      position: relative; overflow: hidden;
     }
-    #process-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
-    #process-btn:active:not(:disabled) { transform: translateY(0); }
+    #process-btn::after {
+      content: '';
+      position: absolute; top: 0; left: -80%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
+      transform: skewX(-12deg);
+      pointer-events: none;
+    }
+    #process-btn:hover:not(:disabled) {
+      opacity: .95; transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(212,112,10,.35);
+    }
+    #process-btn:hover:not(:disabled)::after { animation: btnShine .55s cubic-bezier(0.16,1,0.3,1) forwards; }
+    #process-btn:active:not(:disabled) { transform: translateY(0); box-shadow: 0 1px 3px rgba(212,112,10,.3); }
     #process-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
     /* ════════════════════════════════
@@ -636,6 +652,31 @@
     #error-msg { font-size: .85rem; color: var(--red); padding-top: 6px; line-height: 1.5; }
 
     /* ════════════════════════════════
+       SECTION INTERACTIONS & ANIMATIONS
+    ════════════════════════════════ */
+    .section {
+      transition: border-color .2s;
+    }
+    .section:focus-within {
+      border-color: rgba(212,112,10,.32);
+    }
+
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .page > .section,
+    .page > #process-btn {
+      animation: fadeSlideUp .48s cubic-bezier(0.16,1,0.3,1) both;
+      animation-delay: calc(var(--si, 0) * 65ms);
+    }
+
+    @keyframes btnShine {
+      from { left: -80%; }
+      to   { left: 140%; }
+    }
+
+    /* ════════════════════════════════
        RESPONSIVE
     ════════════════════════════════ */
     @media (max-width: 640px) {
@@ -644,7 +685,6 @@
       .page { padding: 24px 12px 60px; }
       .section-body { padding: 16px; }
       .section-head { padding: 14px 16px; }
-      .format-grid { grid-template-columns: 1fr; }
       .upload-btns { flex-direction: column; }
     }
 
@@ -1026,34 +1066,40 @@
         <label class="format-card fmt-xls">
           <input type="checkbox" name="fmt" value="xls" checked />
           <div class="format-card-inner">
-            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">
               <svg width="18" height="18" fill="none" stroke="#16a34a" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
             </div>
-            <span class="fmt-name">Excel (.xlsx)</span>
-            <span class="fmt-desc">Embedded thumbnails with all attributes as columns</span>
+            <div class="format-card-content">
+              <span class="fmt-name">Excel (.xlsx)</span>
+              <span class="fmt-desc">Embedded thumbnails with all attributes as columns</span>
+            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
         </label>
         <label class="format-card fmt-csv">
           <input type="checkbox" name="fmt" value="csv" />
           <div class="format-card-inner">
-            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">
               <svg width="18" height="18" fill="none" stroke="#2563eb" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
             </div>
-            <span class="fmt-name">CSV (.csv)</span>
-            <span class="fmt-desc">Filename column instead of image, same structure</span>
+            <div class="format-card-content">
+              <span class="fmt-name">CSV (.csv)</span>
+              <span class="fmt-desc">Filename column instead of image, same structure</span>
+            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
         </label>
         <label class="format-card fmt-txt">
           <input type="checkbox" name="fmt" value="txt" />
           <div class="format-card-inner">
-            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="format-icon">
               <svg width="18" height="18" fill="none" stroke="#7c3aed" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
             </div>
-            <span class="fmt-name">Text files (.txt)</span>
-            <span class="fmt-desc">One file per product, named after the product title</span>
+            <div class="format-card-content">
+              <span class="fmt-name">Text files (.txt)</span>
+              <span class="fmt-desc">One file per product, named after the product title</span>
+            </div>
+            <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
           </div>
         </label>
       </div>
@@ -1723,6 +1769,11 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   }
 
 })();
+
+// Stagger entrance animation on sections
+document.querySelectorAll('.page > .section, .page > #process-btn').forEach(function (el, i) {
+  el.style.setProperty('--si', i);
+});
 
 // How-It-Works banner — hide if already dismissed
 (function () {

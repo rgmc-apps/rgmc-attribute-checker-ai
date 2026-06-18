@@ -99,12 +99,13 @@
       border-bottom: 1px solid var(--border-lt);
     }
     .step-num {
-      width: 26px; height: 26px; border-radius: 50%;
+      width: 30px; height: 30px; border-radius: 50%;
       background: var(--orange); color: #fff;
-      font-size: .75rem; font-weight: 700;
+      font-size: .76rem; font-weight: 700;
       display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      box-shadow: 0 1px 4px rgba(212,112,10,.3);
     }
-    .section-head-text h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .section-head-text h3 { font-size: .9rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
     .section-head-text p { font-size: .76rem; color: var(--muted); margin-top: 1px; }
     .section-body { padding: 22px; }
 
@@ -142,10 +143,12 @@
       background: var(--orange); color: #fff; border: none;
       border-radius: var(--r-sm); padding: 9px 18px;
       font-size: .83rem; font-weight: 600; font-family: inherit;
-      cursor: pointer; transition: opacity .15s;
+      cursor: pointer; transition: opacity .15s, transform .1s, box-shadow .15s;
+      box-shadow: 0 1px 3px rgba(212,112,10,.25);
     }
-    .btn-primary:hover:not(:disabled) { opacity: .88; }
-    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); box-shadow: 0 3px 10px rgba(212,112,10,.3); }
+    .btn-primary:active:not(:disabled) { transform: translateY(0) scale(.98); box-shadow: none; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
 
     .btn-secondary {
       display: inline-flex; align-items: center; gap: 6px;
@@ -403,6 +406,22 @@
     }
     .attr-map-btn:hover:not(:disabled) { background: var(--bg); color: var(--ink); }
     .attr-map-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+    /* ════ SECTION INTERACTIONS & ANIMATIONS ════ */
+    .section {
+      transition: border-color .2s;
+    }
+    .section:focus-within {
+      border-color: rgba(212,112,10,.32);
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .page > .section {
+      animation: fadeSlideUp .48s cubic-bezier(0.16,1,0.3,1) both;
+      animation-delay: calc(var(--si, 0) * 65ms);
+    }
 
     /* ════ SETUP GUIDE ════ */
     .setup-guide {
@@ -1491,6 +1510,11 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   loadAttributes();
 
 })();
+
+// Stagger entrance animation on sections
+document.querySelectorAll('.page > .section').forEach(function (el, i) {
+  el.style.setProperty('--si', i);
+});
 
 // Setup guide — hide if already dismissed
 (function () {
