@@ -237,6 +237,128 @@ def api_brands_delete(brand_id):
 # Configuration — Brand Prompts API
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# Attributes API
+# ---------------------------------------------------------------------------
+
+@app.route('/api/attributes', methods=['GET'])
+def api_attributes_list():
+    try:
+        res = _sb().table('attributes').select('*').order('attribute_id').execute()
+        return jsonify(res.data)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/attributes', methods=['POST'])
+def api_attributes_create():
+    data = request.get_json(force=True) or {}
+    name = (data.get('attribute_name') or '').strip()
+    desc = (data.get('attribute_desc') or '').strip()
+    if not name:
+        return jsonify({'error': 'attribute_name is required.'}), 400
+    try:
+        res = _sb().table('attributes').insert(
+            {'attribute_name': name, 'attribute_desc': desc}
+        ).execute()
+        return jsonify(res.data[0] if res.data else {}), 201
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/attributes/<int:attr_id>', methods=['PUT'])
+def api_attributes_update(attr_id):
+    data = request.get_json(force=True) or {}
+    name = (data.get('attribute_name') or '').strip()
+    desc = (data.get('attribute_desc') or '').strip()
+    if not name:
+        return jsonify({'error': 'attribute_name is required.'}), 400
+    try:
+        res = _sb().table('attributes').update(
+            {'attribute_name': name, 'attribute_desc': desc}
+        ).eq('attribute_id', attr_id).execute()
+        return jsonify(res.data[0] if res.data else {})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/attributes/<int:attr_id>', methods=['DELETE'])
+def api_attributes_delete(attr_id):
+    try:
+        _sb().table('attributes').delete().eq('attribute_id', attr_id).execute()
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Brand–Attribute Mapping API
+# ---------------------------------------------------------------------------
+
+@app.route('/api/brands/<int:brand_id>/attributes', methods=['GET'])
+def api_brand_attributes_get(brand_id):
+    try:
+        res = (
+            _sb().table('brand_attributes')
+            .select('sort_order,attributes(attribute_id,attribute_name,attribute_desc)')
+            .eq('brand_id', brand_id)
+            .order('sort_order')
+            .execute()
+        )
+        items = [
+            {
+                'attribute_id':   row['attributes']['attribute_id'],
+                'attribute_name': row['attributes']['attribute_name'],
+                'attribute_desc': row['attributes'].get('attribute_desc') or '',
+                'sort_order':     row['sort_order'],
+            }
+            for row in res.data if row.get('attributes')
+        ]
+        return jsonify(items)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/brands/<int:brand_id>/attributes', methods=['POST'])
+def api_brand_attributes_set(brand_id):
+    data = request.get_json(force=True) or {}
+    attr_ids = data.get('attribute_ids', [])
+    try:
+        client = _sb()
+        client.table('brand_attributes').delete().eq('brand_id', brand_id).execute()
+        if attr_ids:
+            rows = [
+                {'brand_id': brand_id, 'attribute_id': int(aid), 'sort_order': i}
+                for i, aid in enumerate(attr_ids)
+            ]
+            client.table('brand_attributes').insert(rows).execute()
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Configuration — active prompt (used by main page brand prompt source)
+# ---------------------------------------------------------------------------
+
+@app.route('/api/brands/<int:brand_id>/active-prompt', methods=['GET'])
+def api_brand_active_prompt(brand_id):
+    try:
+        res = (
+            _sb().table('brand_prompts')
+            .select('id,brand_prompt')
+            .eq('brand_id', brand_id)
+            .eq('is_active', True)
+            .limit(1)
+            .execute()
+        )
+        if not res.data:
+            return jsonify({'brand_prompt': None})
+        return jsonify(res.data[0])
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
 @app.route('/api/brands/<int:brand_id>/prompts', methods=['GET'])
 def api_brand_prompts_list(brand_id):
     try:

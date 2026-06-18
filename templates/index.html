@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Attribute Checker — RGMC Group</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='site-badge.png') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     /* ── Tokens ── */
     :root {
@@ -38,7 +39,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--ink);
       min-height: 100vh;
@@ -351,6 +352,144 @@
     }
 
     /* ════════════════════════════════
+       PROMPT SOURCE TOGGLE
+    ════════════════════════════════ */
+    .ps-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .ps-label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--ink-2);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .ps-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .ps-option { position: relative; cursor: pointer; }
+    .ps-option input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .ps-inner {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--surface);
+      transition: background .12s, color .12s;
+      white-space: nowrap;
+    }
+    .ps-option + .ps-option .ps-inner { border-left: 1px solid var(--border); }
+    .ps-option input:checked ~ .ps-inner { background: var(--orange); color: #fff; }
+    .ps-option:hover input:not(:checked) ~ .ps-inner { background: var(--bg); color: var(--ink); }
+    #brand-select-wrap {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+    }
+    #brand-select {
+      flex: 1;
+      max-width: 260px;
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 7px 10px;
+      font-size: .83rem;
+      font-family: inherit;
+      color: var(--ink);
+      background: var(--surface);
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    #brand-select:focus {
+      outline: none;
+      border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1);
+    }
+    #brand-prompt-status {
+      font-size: .74rem;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      margin-top: -10px;
+      margin-bottom: 14px;
+    }
+    #brand-prompt-status.loaded { color: var(--green); }
+    #brand-prompt-status.empty  { color: var(--amber); }
+    #attr-source-status {
+      font-size: .74rem; display: none;
+      align-items: center; gap: 5px; margin-bottom: 14px;
+    }
+    #attr-source-status.loaded { color: var(--green); }
+    #attr-source-status.empty  { color: var(--amber); }
+
+    /* ════════════════════════════════
+       SEARCHABLE SELECT
+    ════════════════════════════════ */
+    .ss-wrap { position: relative; }
+    .ss-trigger {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 9px 12px; font-size: .83rem; font-family: inherit;
+      color: var(--ink); background: var(--bg); cursor: pointer; text-align: left;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .ss-trigger:focus, .ss-wrap.is-open .ss-trigger {
+      outline: none; border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1); background: var(--surface);
+    }
+    .ss-trigger-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ss-trigger-text.is-placeholder { color: var(--muted); }
+    .ss-chevron { flex-shrink: 0; color: var(--muted); transition: transform .15s; }
+    .ss-wrap.is-open .ss-chevron { transform: rotate(180deg); }
+    .ss-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; min-width: 240px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm); box-shadow: var(--shadow);
+      z-index: 200; display: none; overflow: hidden;
+    }
+    .ss-wrap.is-open .ss-panel { display: block; }
+    .ss-search-row {
+      padding: 8px; border-bottom: 1px solid var(--border-lt); position: relative;
+    }
+    .ss-search-icon {
+      position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--muted);
+    }
+    .ss-search {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      padding: 7px 10px 7px 30px; font-size: .82rem; font-family: inherit;
+      color: var(--ink); background: var(--bg);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .ss-search:focus { outline: none; border-color: var(--orange); background: var(--surface); box-shadow: 0 0 0 3px rgba(212,112,10,.1); }
+    .ss-list { max-height: 224px; overflow-y: auto; }
+    .ss-option {
+      padding: 9px 12px; font-size: .83rem; cursor: pointer;
+      color: var(--ink-2); display: flex; align-items: center; gap: 8px;
+      transition: background .1s, color .1s;
+    }
+    .ss-option + .ss-option { border-top: 1px solid var(--border-lt); }
+    .ss-option:hover, .ss-option.is-focused { background: var(--orange-lt); color: var(--ink); }
+    .ss-option.is-selected { font-weight: 600; color: var(--orange); }
+    .ss-option-code {
+      font-family: 'JetBrains Mono', monospace; font-size: .7rem;
+      background: var(--border-lt); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 5px; color: var(--orange); flex-shrink: 0;
+    }
+    .ss-no-results { padding: 14px 12px; font-size: .82rem; color: var(--muted); text-align: center; }
+
+    /* ════════════════════════════════
        ATTRIBUTES TABLE
     ════════════════════════════════ */
     .attr-table-wrap {
@@ -637,6 +776,44 @@
       </div>
     </div>
     <div class="section-body">
+      <!-- Prompt source toggle -->
+      <div class="ps-row">
+        <span class="ps-label">Prompt source</span>
+        <div class="ps-toggle">
+          <label class="ps-option">
+            <input type="radio" name="prompt_source" value="default" checked id="ps-default" />
+            <span class="ps-inner">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+              Default
+            </span>
+          </label>
+          <label class="ps-option">
+            <input type="radio" name="prompt_source" value="brand" id="ps-brand" />
+            <span class="ps-inner">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Brand Prompt
+            </span>
+          </label>
+        </div>
+        <div id="brand-select-wrap" style="flex:1;min-width:200px;">
+          <div class="ss-wrap" id="brand-ss">
+            <button class="ss-trigger" type="button">
+              <span class="ss-trigger-text is-placeholder">Select brand…</span>
+              <svg class="ss-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="ss-panel">
+              <div class="ss-search-row">
+                <svg class="ss-search-icon" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input class="ss-search" type="text" placeholder="Search brands…" autocomplete="off" />
+              </div>
+              <div class="ss-list"></div>
+              <div class="ss-no-results" style="display:none;">No brands found.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="brand-prompt-status"></div>
+
       <div class="instruction-box">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-top:2px;flex-shrink:0;stroke:var(--orange)">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -664,6 +841,28 @@
       </div>
     </div>
     <div class="section-body">
+      <!-- Attribute source toggle -->
+      <div class="ps-row" style="margin-bottom:16px;">
+        <span class="ps-label">Attribute source</span>
+        <div class="ps-toggle">
+          <label class="ps-option">
+            <input type="radio" name="attr_source" value="custom" checked id="as-custom" />
+            <span class="ps-inner">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              Custom
+            </span>
+          </label>
+          <label class="ps-option">
+            <input type="radio" name="attr_source" value="brand" id="as-brand" />
+            <span class="ps-inner">
+              <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Brand Attributes
+            </span>
+          </label>
+        </div>
+      </div>
+      <div id="attr-source-status"></div>
+
       <div class="attr-table-wrap">
         <table class="attr-table" id="attr-table">
           <thead>
@@ -698,7 +897,9 @@
           <input type="checkbox" name="fmt" value="xls" checked />
           <div class="format-card-inner">
             <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="format-icon">📊</div>
+            <div class="format-icon">
+              <svg width="18" height="18" fill="none" stroke="#16a34a" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+            </div>
             <span class="fmt-name">Excel (.xlsx)</span>
             <span class="fmt-desc">Embedded thumbnails with all attributes as columns</span>
           </div>
@@ -707,7 +908,9 @@
           <input type="checkbox" name="fmt" value="csv" />
           <div class="format-card-inner">
             <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="format-icon">📋</div>
+            <div class="format-icon">
+              <svg width="18" height="18" fill="none" stroke="#2563eb" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+            </div>
             <span class="fmt-name">CSV (.csv)</span>
             <span class="fmt-desc">Filename column instead of image, same structure</span>
           </div>
@@ -716,7 +919,9 @@
           <input type="checkbox" name="fmt" value="txt" />
           <div class="format-card-inner">
             <div class="format-check"><svg width="10" height="10" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-            <div class="format-icon">📄</div>
+            <div class="format-icon">
+              <svg width="18" height="18" fill="none" stroke="#7c3aed" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+            </div>
             <span class="fmt-name">Text files (.txt)</span>
             <span class="fmt-desc">One file per product, named after the product title</span>
           </div>
@@ -777,6 +982,96 @@
 </div>
 
 <script>
+/* ─────────────────────────────────────────────────────────
+   Searchable Select — reusable component
+───────────────────────────────────────────────────────── */
+function makeSearchableSelect(wrapEl, placeholderText) {
+  placeholderText = placeholderText || 'Select…';
+  const trigger    = wrapEl.querySelector('.ss-trigger');
+  const triggerTxt = wrapEl.querySelector('.ss-trigger-text');
+  const searchInp  = wrapEl.querySelector('.ss-search');
+  const listEl     = wrapEl.querySelector('.ss-list');
+  const noResults  = wrapEl.querySelector('.ss-no-results');
+
+  let allOptions  = [];
+  let selectedVal = null;
+  let onChangeFn  = null;
+
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function openPanel() {
+    wrapEl.classList.add('is-open');
+    searchInp.value = '';
+    renderList('');
+    setTimeout(() => searchInp.focus(), 10);
+  }
+
+  function closePanel() { wrapEl.classList.remove('is-open'); }
+
+  function setSelection(value, displayLabel) {
+    selectedVal = value;
+    if (value) {
+      triggerTxt.textContent = displayLabel;
+      triggerTxt.classList.remove('is-placeholder');
+    } else {
+      triggerTxt.textContent = placeholderText;
+      triggerTxt.classList.add('is-placeholder');
+    }
+    closePanel();
+    if (onChangeFn) onChangeFn(value);
+  }
+
+  function renderList(query) {
+    const q = query.toLowerCase();
+    const filtered = q
+      ? allOptions.filter(o =>
+          o.label.toLowerCase().includes(q) ||
+          (o.code ? o.code.toLowerCase().includes(q) : false))
+      : allOptions;
+
+    listEl.innerHTML = '';
+    noResults.style.display = filtered.length ? 'none' : 'block';
+
+    filtered.forEach(o => {
+      const el = document.createElement('div');
+      el.className = 'ss-option' + (String(o.value) === String(selectedVal) ? ' is-selected' : '');
+      if (o.code) {
+        el.innerHTML = `<span class="ss-option-code">${_esc(o.code)}</span>${_esc(o.label)}`;
+      } else {
+        el.textContent = o.label;
+      }
+      el.addEventListener('click', () =>
+        setSelection(o.value, o.code ? o.code + ' — ' + o.label : o.label)
+      );
+      listEl.appendChild(el);
+    });
+  }
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    wrapEl.classList.contains('is-open') ? closePanel() : openPanel();
+  });
+  searchInp.addEventListener('input', e => renderList(e.target.value));
+  searchInp.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', e => { if (!wrapEl.contains(e.target)) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+  return {
+    setOptions(opts) { allOptions = opts; },
+    getValue()       { return selectedVal; },
+    setValue(v, lbl) {
+      selectedVal = v;
+      triggerTxt.textContent = v ? lbl : placeholderText;
+      triggerTxt.classList.toggle('is-placeholder', !v);
+    },
+    reset()      { setSelection(null, null); },
+    onChange(fn) { onChangeFn = fn; },
+  };
+}
+
 (function () {
   // ── State ──────────────────────────────────────────────
   // Each entry: { file: File, folder: string, url: string }
@@ -819,6 +1114,128 @@
   const resultCard     = document.getElementById('result-card');
   const downloadBtn    = document.getElementById('download-btn');
   const resultMsg      = document.getElementById('result-msg');
+
+  // ── Prompt source ──────────────────────────────────────
+  const DEFAULT_PROMPT    = promptTA.value;
+  const psBrand           = document.getElementById('ps-brand');
+  const brandSelectWrap   = document.getElementById('brand-select-wrap');
+  const brandPromptStatus = document.getElementById('brand-prompt-status');
+  const attrSourceStatus  = document.getElementById('attr-source-status');
+
+  let brandsLoaded = false;
+  const brandSS = makeSearchableSelect(document.getElementById('brand-ss'), 'Select brand…');
+
+  brandSS.onChange(brandId => {
+    if (brandId) {
+      loadBrandPrompt(brandId);
+      if (document.getElementById('as-brand').checked) loadBrandAttributes(brandId);
+    } else {
+      promptTA.value = DEFAULT_PROMPT;
+      brandPromptStatus.style.display = 'none';
+      if (document.getElementById('as-brand').checked) resetToCustomAttrs();
+    }
+  });
+
+  document.querySelectorAll('input[name="prompt_source"]').forEach(r =>
+    r.addEventListener('change', onPromptSourceChange)
+  );
+
+  function onPromptSourceChange() {
+    const isBrand = psBrand.checked;
+    brandSelectWrap.style.display = isBrand ? 'flex' : 'none';
+    brandPromptStatus.style.display = 'none';
+    if (isBrand) {
+      loadBrands();
+      if (brandSS.getValue()) loadBrandPrompt(brandSS.getValue());
+    } else {
+      promptTA.value = DEFAULT_PROMPT;
+      if (document.getElementById('as-brand').checked) resetToCustomAttrs();
+    }
+  }
+
+  function loadBrands() {
+    if (brandsLoaded) return;
+    fetch('/api/brands')
+      .then(r => r.json())
+      .then(data => {
+        brandsLoaded = true;
+        brandSS.setOptions(
+          (Array.isArray(data) ? data : []).map(b => ({
+            value: b.brand_id, label: b.brand_name, code: b.brand_code,
+          }))
+        );
+      })
+      .catch(() => {});
+  }
+
+  function loadBrandPrompt(brandId) {
+    brandPromptStatus.style.display = 'none';
+    fetch('/api/brands/' + brandId + '/active-prompt')
+      .then(r => r.json())
+      .then(data => {
+        if (data.brand_prompt) {
+          promptTA.value = data.brand_prompt;
+          brandPromptStatus.className = 'loaded';
+          brandPromptStatus.style.display = 'flex';
+          brandPromptStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Active prompt loaded for this brand`;
+        } else {
+          promptTA.value = DEFAULT_PROMPT;
+          brandPromptStatus.className = 'empty';
+          brandPromptStatus.style.display = 'flex';
+          brandPromptStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> No active prompt for this brand — using default`;
+        }
+      })
+      .catch(() => {});
+  }
+
+  // ── Attribute source ────────────────────────────────────
+  document.querySelectorAll('input[name="attr_source"]').forEach(r =>
+    r.addEventListener('change', onAttrSourceChange)
+  );
+
+  function onAttrSourceChange() {
+    const isBrand = document.getElementById('as-brand').checked;
+    if (isBrand) {
+      const brandId = brandSS.getValue();
+      if (!brandId) {
+        document.getElementById('as-custom').checked = true;
+        attrSourceStatus.className = 'empty';
+        attrSourceStatus.style.display = 'flex';
+        attrSourceStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Select a brand in Step 2 first`;
+        return;
+      }
+      loadBrandAttributes(brandId);
+    } else {
+      resetToCustomAttrs();
+    }
+  }
+
+  function loadBrandAttributes(brandId) {
+    attrSourceStatus.style.display = 'none';
+    fetch('/api/brands/' + brandId + '/attributes')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length) {
+          attrTbody.innerHTML = '';
+          data.forEach(a => addAttrRow(a.attribute_name, a.attribute_desc));
+          attrSourceStatus.className = 'loaded';
+          attrSourceStatus.style.display = 'flex';
+          attrSourceStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Brand attributes loaded`;
+        } else {
+          document.getElementById('as-custom').checked = true;
+          attrSourceStatus.className = 'empty';
+          attrSourceStatus.style.display = 'flex';
+          attrSourceStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> No attributes mapped for this brand — using custom`;
+        }
+      })
+      .catch(() => {});
+  }
+
+  function resetToCustomAttrs() {
+    attrTbody.innerHTML = '';
+    DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
+    attrSourceStatus.style.display = 'none';
+  }
 
   DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
 

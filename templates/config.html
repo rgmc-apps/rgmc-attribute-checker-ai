@@ -4,9 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Configuration — RGMC Group</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='site-badge.png') }}" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     /* ── Tokens ── */
     :root {
@@ -35,7 +36,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--ink);
       min-height: 100vh;
@@ -231,8 +232,60 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ════ BRAND SELECT ════ */
-    .brand-select-wrap { max-width: 360px; }
+    /* ════ SEARCHABLE SELECT ════ */
+    .ss-wrap { position: relative; }
+    .ss-trigger {
+      width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 9px 12px; font-size: .83rem; font-family: inherit;
+      color: var(--ink); background: var(--bg); cursor: pointer; text-align: left;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .ss-trigger:focus, .ss-wrap.is-open .ss-trigger {
+      outline: none; border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1); background: var(--surface);
+    }
+    .ss-trigger-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ss-trigger-text.is-placeholder { color: var(--muted); }
+    .ss-chevron { flex-shrink: 0; color: var(--muted); transition: transform .15s; }
+    .ss-wrap.is-open .ss-chevron { transform: rotate(180deg); }
+    .ss-panel {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0; min-width: 240px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm); box-shadow: var(--shadow);
+      z-index: 200; display: none; overflow: hidden;
+    }
+    .ss-wrap.is-open .ss-panel { display: block; }
+    .ss-search-row {
+      padding: 8px; border-bottom: 1px solid var(--border-lt); position: relative;
+    }
+    .ss-search-icon {
+      position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+      pointer-events: none; color: var(--muted);
+    }
+    .ss-search {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      padding: 7px 10px 7px 30px; font-size: .82rem; font-family: inherit;
+      color: var(--ink); background: var(--bg);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .ss-search:focus { outline: none; border-color: var(--orange); background: var(--surface); box-shadow: 0 0 0 3px rgba(212,112,10,.1); }
+    .ss-list { max-height: 224px; overflow-y: auto; }
+    .ss-option {
+      padding: 9px 12px; font-size: .83rem; cursor: pointer;
+      color: var(--ink-2); display: flex; align-items: center; gap: 8px;
+      transition: background .1s, color .1s;
+    }
+    .ss-option + .ss-option { border-top: 1px solid var(--border-lt); }
+    .ss-option:hover { background: var(--orange-lt); color: var(--ink); }
+    .ss-option.is-selected { font-weight: 600; color: var(--orange); }
+    .ss-option-code {
+      font-family: 'JetBrains Mono', monospace; font-size: .7rem;
+      background: var(--border-lt); border: 1px solid var(--border);
+      border-radius: 3px; padding: 1px 5px; color: var(--orange); flex-shrink: 0;
+    }
+    .ss-no-results { padding: 14px 12px; font-size: .82rem; color: var(--muted); text-align: center; }
+    .brand-select-wrap { max-width: 420px; }
 
     /* ════ PROMPTS PLACEHOLDER ════ */
     .prompts-placeholder {
@@ -325,6 +378,31 @@
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+
+    /* ════ ATTR MAP ROWS ════ */
+    .attr-map-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; background: var(--surface);
+      border-top: 1px solid var(--border-lt); transition: background .1s;
+    }
+    .attr-map-row:first-child { border-top: none; }
+    .attr-map-row:hover { background: var(--bg); }
+    .attr-map-check {
+      accent-color: var(--orange); width: 15px; height: 15px;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .attr-map-label { flex: 1; cursor: pointer; min-width: 0; }
+    .attr-map-name { font-size: .83rem; font-weight: 500; color: var(--ink); display: block; }
+    .attr-map-desc { font-size: .74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .attr-map-btns { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+    .attr-map-btn {
+      background: none; border: 1px solid var(--border); border-radius: 3px;
+      width: 22px; height: 20px; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: var(--muted); font-size: .6rem;
+      transition: background .1s, color .1s;
+    }
+    .attr-map-btn:hover:not(:disabled) { background: var(--bg); color: var(--ink); }
+    .attr-map-btn:disabled { opacity: .3; cursor: not-allowed; }
 
     /* ════ RESPONSIVE ════ */
     @media (max-width: 640px) {
@@ -450,10 +528,21 @@
 
       <!-- Brand selector -->
       <div class="brand-select-wrap" style="margin-bottom:22px;">
-        <label class="field-label" for="brand-select">Select Brand</label>
-        <select class="field-input" id="brand-select">
-          <option value="">— Choose a brand —</option>
-        </select>
+        <label class="field-label">Select Brand</label>
+        <div class="ss-wrap" id="cfg-brand-ss">
+          <button class="ss-trigger" type="button">
+            <span class="ss-trigger-text is-placeholder">— Choose a brand —</span>
+            <svg class="ss-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ss-panel">
+            <div class="ss-search-row">
+              <svg class="ss-search-icon" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="ss-search" type="text" placeholder="Search brands…" autocomplete="off" />
+            </div>
+            <div class="ss-list"></div>
+            <div class="ss-no-results" style="display:none;">No brands found.</div>
+          </div>
+        </div>
       </div>
 
       <!-- Placeholder (no brand selected) -->
@@ -506,9 +595,220 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════
+       SECTION 3 — ATTRIBUTES
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">3</div>
+      <div class="section-head-text">
+        <h3>Attributes</h3>
+        <p>Global attribute catalog used across brands</p>
+      </div>
+      <button class="btn-add-new" id="toggle-attr-form-btn" type="button">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Attribute
+      </button>
+    </div>
+    <div class="section-body">
+
+      <!-- Attribute add/edit form -->
+      <div class="brand-form-panel" id="attr-form-panel" style="display:none;">
+        <h4 id="attr-form-title">Add Attribute</h4>
+        <div class="form-row">
+          <div class="form-col form-col-sm">
+            <label class="field-label" for="f-attr-name">Name *</label>
+            <input class="field-input" id="f-attr-name" type="text" placeholder="e.g. Color" maxlength="200" />
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="f-attr-desc">Description</label>
+            <input class="field-input" id="f-attr-desc" type="text" placeholder="e.g. Main visible color of the garment" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="save-attr-btn" type="button">Save Attribute</button>
+          <button class="btn-secondary" id="cancel-attr-btn" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <div id="attrs-loading" class="state-text loading" style="display:none;">
+        <span class="spinner"></span> Loading attributes…
+      </div>
+      <div id="attrs-empty" class="state-text" style="display:none;">
+        No attributes yet. Click <strong>Add Attribute</strong> to create one.
+      </div>
+      <div class="table-wrap" id="attrs-table-wrap" style="display:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:52px">ID</th>
+              <th style="width:200px">Name</th>
+              <th>Description</th>
+              <th style="width:100px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="attrs-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECTION 4 — BRAND ATTRIBUTE MAPPING
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">4</div>
+      <div class="section-head-text">
+        <h3>Brand Attribute Mapping</h3>
+        <p>Choose which attributes apply per brand and set their order</p>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <!-- Brand selector -->
+      <div class="brand-select-wrap" style="margin-bottom:22px;">
+        <label class="field-label">Select Brand</label>
+        <div class="ss-wrap" id="map-brand-ss">
+          <button class="ss-trigger" type="button">
+            <span class="ss-trigger-text is-placeholder">— Choose a brand —</span>
+            <svg class="ss-chevron" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="ss-panel">
+            <div class="ss-search-row">
+              <svg class="ss-search-icon" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="ss-search" type="text" placeholder="Search brands…" autocomplete="off" />
+            </div>
+            <div class="ss-list"></div>
+            <div class="ss-no-results" style="display:none;">No brands found.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Placeholder (no brand selected) -->
+      <div id="map-placeholder" class="prompts-placeholder">
+        <div class="prompts-placeholder-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+          </svg>
+        </div>
+        <p>Select a brand to manage its attribute mapping.</p>
+      </div>
+
+      <!-- Mapping area -->
+      <div id="map-area" style="display:none;">
+        <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px;">Check attributes to include. Use arrows to reorder.</p>
+        <div id="attr-map-list" style="border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px;"></div>
+        <div class="form-actions">
+          <button class="btn-primary" id="save-map-btn" type="button">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+            </svg>
+            Save Mapping
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
 </div><!-- /page -->
 
 <script>
+/* ─────────────────────────────────────────────────────────
+   Searchable Select — reusable component
+───────────────────────────────────────────────────────── */
+function makeSearchableSelect(wrapEl, placeholderText) {
+  placeholderText = placeholderText || 'Select…';
+  const trigger    = wrapEl.querySelector('.ss-trigger');
+  const triggerTxt = wrapEl.querySelector('.ss-trigger-text');
+  const searchInp  = wrapEl.querySelector('.ss-search');
+  const listEl     = wrapEl.querySelector('.ss-list');
+  const noResults  = wrapEl.querySelector('.ss-no-results');
+
+  let allOptions  = [];
+  let selectedVal = null;
+  let onChangeFn  = null;
+
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function openPanel() {
+    wrapEl.classList.add('is-open');
+    searchInp.value = '';
+    renderList('');
+    setTimeout(() => searchInp.focus(), 10);
+  }
+
+  function closePanel() { wrapEl.classList.remove('is-open'); }
+
+  function setSelection(value, displayLabel) {
+    selectedVal = value;
+    if (value) {
+      triggerTxt.textContent = displayLabel;
+      triggerTxt.classList.remove('is-placeholder');
+    } else {
+      triggerTxt.textContent = placeholderText;
+      triggerTxt.classList.add('is-placeholder');
+    }
+    closePanel();
+    if (onChangeFn) onChangeFn(value);
+  }
+
+  function renderList(query) {
+    const q = query.toLowerCase();
+    const filtered = q
+      ? allOptions.filter(o =>
+          o.label.toLowerCase().includes(q) ||
+          (o.code ? o.code.toLowerCase().includes(q) : false))
+      : allOptions;
+
+    listEl.innerHTML = '';
+    noResults.style.display = filtered.length ? 'none' : 'block';
+
+    filtered.forEach(o => {
+      const el = document.createElement('div');
+      el.className = 'ss-option' + (String(o.value) === String(selectedVal) ? ' is-selected' : '');
+      if (o.code) {
+        el.innerHTML = `<span class="ss-option-code">${_esc(o.code)}</span>${_esc(o.label)}`;
+      } else {
+        el.textContent = o.label;
+      }
+      el.addEventListener('click', () =>
+        setSelection(o.value, o.code ? o.code + ' — ' + o.label : o.label)
+      );
+      listEl.appendChild(el);
+    });
+  }
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    wrapEl.classList.contains('is-open') ? closePanel() : openPanel();
+  });
+  searchInp.addEventListener('input', e => renderList(e.target.value));
+  searchInp.addEventListener('click', e => e.stopPropagation());
+  document.addEventListener('click', e => { if (!wrapEl.contains(e.target)) closePanel(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+  return {
+    setOptions(opts) { allOptions = opts; },
+    getValue()       { return selectedVal; },
+    setValue(v, lbl) {
+      selectedVal = v;
+      triggerTxt.textContent = v ? lbl : placeholderText;
+      triggerTxt.classList.toggle('is-placeholder', !v);
+    },
+    reset()      { setSelection(null, null); },
+    onChange(fn) { onChangeFn = fn; },
+  };
+}
+
 (function () {
   /* ── State ── */
   let brands = [];
@@ -589,17 +889,20 @@
   }
 
   function renderBrandDropdown() {
-    const sel = document.getElementById('brand-select');
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">— Choose a brand —</option>';
-    brands.forEach(b => {
-      const opt = document.createElement('option');
-      opt.value = b.brand_id;
-      opt.textContent = b.brand_code + ' — ' + b.brand_name;
-      sel.appendChild(opt);
-    });
-    if (prev && brands.some(b => String(b.brand_id) === prev)) {
-      sel.value = prev;
+    const opts = brands.map(b => ({ value: b.brand_id, label: b.brand_name, code: b.brand_code }));
+
+    const prevPrompts = configBrandSS.getValue();
+    configBrandSS.setOptions(opts);
+    if (prevPrompts && brands.some(b => String(b.brand_id) === String(prevPrompts))) {
+      const b = brands.find(b => String(b.brand_id) === String(prevPrompts));
+      if (b) configBrandSS.setValue(b.brand_id, b.brand_code + ' — ' + b.brand_name);
+    }
+
+    const prevMap = mapBrandSS.getValue();
+    mapBrandSS.setOptions(opts);
+    if (prevMap && brands.some(b => String(b.brand_id) === String(prevMap))) {
+      const b = brands.find(b => String(b.brand_id) === String(prevMap));
+      if (b) mapBrandSS.setValue(b.brand_id, b.brand_code + ' — ' + b.brand_name);
     }
   }
 
@@ -677,7 +980,7 @@
       toast('Brand deleted.', 'success');
       if (currentBrandId === id) {
         currentBrandId = null;
-        document.getElementById('brand-select').value = '';
+        configBrandSS.reset();
         showPromptPlaceholder();
       }
       await loadBrands();
@@ -690,8 +993,12 @@
      BRAND PROMPTS
   ════════════════════════════════ */
 
-  document.getElementById('brand-select').addEventListener('change', async function () {
-    currentBrandId = this.value ? parseInt(this.value, 10) : null;
+  const configBrandSS = makeSearchableSelect(
+    document.getElementById('cfg-brand-ss'), '— Choose a brand —'
+  );
+
+  configBrandSS.onChange(async function (brandId) {
+    currentBrandId = brandId ? parseInt(brandId, 10) : null;
     if (currentBrandId) {
       showPromptsArea();
       await loadPrompts(currentBrandId);
@@ -818,6 +1125,221 @@
     }
   });
 
+  /* ════════════════════════════════
+     ATTRIBUTES
+  ════════════════════════════════ */
+
+  let attributes    = [];
+  let editingAttrId = null;
+
+  async function loadAttributes() {
+    show('attrs-loading');
+    hide('attrs-empty');
+    hide('attrs-table-wrap');
+    try {
+      attributes = await api('GET', '/api/attributes');
+      renderAttributes();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      hide('attrs-loading');
+    }
+  }
+
+  function renderAttributes() {
+    if (!attributes.length) { show('attrs-empty'); hide('attrs-table-wrap'); return; }
+    hide('attrs-empty'); show('attrs-table-wrap');
+    const tbody = document.getElementById('attrs-tbody');
+    tbody.innerHTML = '';
+    attributes.forEach(a => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td class="id-cell">#${a.attribute_id}</td>` +
+        `<td style="font-weight:500;color:var(--ink)">${esc(a.attribute_name)}</td>` +
+        `<td class="desc-cell">${esc(a.attribute_desc || '—')}</td>` +
+        `<td class="actions-cell">` +
+          `<button class="btn-sm" onclick="startEditAttr(${a.attribute_id})">Edit</button>` +
+          `<button class="btn-sm danger" onclick="deleteAttr(${a.attribute_id},'${esc(a.attribute_name)}')">Delete</button>` +
+        `</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('toggle-attr-form-btn').addEventListener('click', () => {
+    const panel = document.getElementById('attr-form-panel');
+    if (panel.style.display === 'none') {
+      resetAttrForm('Add Attribute');
+      panel.style.display = 'block';
+      document.getElementById('f-attr-name').focus();
+    } else {
+      panel.style.display = 'none';
+      editingAttrId = null;
+    }
+  });
+
+  document.getElementById('cancel-attr-btn').addEventListener('click', () => {
+    document.getElementById('attr-form-panel').style.display = 'none';
+    editingAttrId = null;
+  });
+
+  function resetAttrForm(title) {
+    editingAttrId = null;
+    document.getElementById('attr-form-title').textContent = title;
+    document.getElementById('f-attr-name').value = '';
+    document.getElementById('f-attr-desc').value = '';
+    document.getElementById('save-attr-btn').textContent = 'Save Attribute';
+  }
+
+  window.startEditAttr = function (id) {
+    const a = attributes.find(x => x.attribute_id === id);
+    if (!a) return;
+    editingAttrId = id;
+    document.getElementById('attr-form-title').textContent = 'Edit Attribute';
+    document.getElementById('f-attr-name').value = a.attribute_name;
+    document.getElementById('f-attr-desc').value = a.attribute_desc || '';
+    document.getElementById('save-attr-btn').textContent = 'Update Attribute';
+    document.getElementById('attr-form-panel').style.display = 'block';
+    document.getElementById('f-attr-name').focus();
+  };
+
+  document.getElementById('save-attr-btn').addEventListener('click', async () => {
+    const name = document.getElementById('f-attr-name').value.trim();
+    const desc = document.getElementById('f-attr-desc').value.trim();
+    if (!name) { toast('Attribute name is required.', 'error'); return; }
+    const btn = document.getElementById('save-attr-btn');
+    btn.disabled = true;
+    try {
+      if (editingAttrId) {
+        await api('PUT', '/api/attributes/' + editingAttrId, { attribute_name: name, attribute_desc: desc });
+        toast('Attribute updated.', 'success');
+      } else {
+        await api('POST', '/api/attributes', { attribute_name: name, attribute_desc: desc });
+        toast('Attribute created.', 'success');
+      }
+      document.getElementById('attr-form-panel').style.display = 'none';
+      await loadAttributes();
+      if (currentMapBrandId) await loadMappingArea(currentMapBrandId);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  window.deleteAttr = async function (id, name) {
+    if (!confirm('Delete attribute "' + name + '"?\n\nThis will remove it from all brand mappings.')) return;
+    try {
+      await api('DELETE', '/api/attributes/' + id);
+      toast('Attribute deleted.', 'success');
+      await loadAttributes();
+      if (currentMapBrandId) await loadMappingArea(currentMapBrandId);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  /* ════════════════════════════════
+     BRAND ATTRIBUTE MAPPING
+  ════════════════════════════════ */
+
+  let currentMapBrandId = null;
+
+  const mapBrandSS = makeSearchableSelect(
+    document.getElementById('map-brand-ss'), '— Choose a brand —'
+  );
+
+  mapBrandSS.onChange(async function (brandId) {
+    currentMapBrandId = brandId ? parseInt(brandId, 10) : null;
+    if (currentMapBrandId) {
+      hide('map-placeholder');
+      show('map-area');
+      await loadMappingArea(currentMapBrandId);
+    } else {
+      hide('map-area');
+      show('map-placeholder');
+    }
+  });
+
+  async function loadMappingArea(brandId) {
+    const list = document.getElementById('attr-map-list');
+    list.innerHTML = '<div class="state-text loading" style="display:flex;padding:20px;"><span class="spinner"></span>&nbsp;Loading…</div>';
+    try {
+      if (!attributes.length) attributes = await api('GET', '/api/attributes');
+      const brandAttrs = await api('GET', '/api/brands/' + brandId + '/attributes');
+      renderMappingList(attributes, brandAttrs);
+    } catch (e) {
+      toast(e.message, 'error');
+      list.innerHTML = '';
+    }
+  }
+
+  function renderMappingList(allAttrs, brandAttrs) {
+    const list = document.getElementById('attr-map-list');
+    list.innerHTML = '';
+    const mappedIds = new Set(brandAttrs.map(a => a.attribute_id));
+    const mapped    = brandAttrs.map(ba => allAttrs.find(a => a.attribute_id === ba.attribute_id)).filter(Boolean);
+    const unmapped  = allAttrs.filter(a => !mappedIds.has(a.attribute_id));
+
+    [...mapped, ...unmapped].forEach(attr => {
+      const row = document.createElement('div');
+      row.className = 'attr-map-row';
+      row.dataset.attrId = attr.attribute_id;
+      const checked = mappedIds.has(attr.attribute_id);
+      row.innerHTML =
+        `<input type="checkbox" class="attr-map-check" id="amc-${attr.attribute_id}" ${checked ? 'checked' : ''} />` +
+        `<label class="attr-map-label" for="amc-${attr.attribute_id}">` +
+          `<span class="attr-map-name">${esc(attr.attribute_name)}</span>` +
+          `<span class="attr-map-desc">${esc(attr.attribute_desc || '')}</span>` +
+        `</label>` +
+        `<div class="attr-map-btns">` +
+          `<button class="attr-map-btn" title="Move up" onclick="moveAttrRow(this,-1)">▲</button>` +
+          `<button class="attr-map-btn" title="Move down" onclick="moveAttrRow(this,1)">▼</button>` +
+        `</div>`;
+      list.appendChild(row);
+    });
+    updateMoveButtons();
+  }
+
+  window.moveAttrRow = function (btn, dir) {
+    const list = document.getElementById('attr-map-list');
+    const row = btn.closest('.attr-map-row');
+    if (dir === -1 && row.previousElementSibling) {
+      list.insertBefore(row, row.previousElementSibling);
+    } else if (dir === 1 && row.nextElementSibling) {
+      list.insertBefore(row.nextElementSibling, row);
+    }
+    updateMoveButtons();
+  };
+
+  function updateMoveButtons() {
+    const rows = document.querySelectorAll('#attr-map-list .attr-map-row');
+    rows.forEach((row, i) => {
+      row.querySelectorAll('.attr-map-btn')[0].disabled = (i === 0);
+      row.querySelectorAll('.attr-map-btn')[1].disabled = (i === rows.length - 1);
+    });
+  }
+
+  document.getElementById('save-map-btn').addEventListener('click', async () => {
+    if (!currentMapBrandId) return;
+    const rows = document.querySelectorAll('#attr-map-list .attr-map-row');
+    const attr_ids = [];
+    rows.forEach(row => {
+      if (row.querySelector('.attr-map-check')?.checked) {
+        attr_ids.push(parseInt(row.dataset.attrId, 10));
+      }
+    });
+    const btn = document.getElementById('save-map-btn');
+    btn.disabled = true;
+    try {
+      await api('POST', '/api/brands/' + currentMapBrandId + '/attributes', { attribute_ids: attr_ids });
+      toast('Attribute mapping saved.', 'success');
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   /* ── Utilities ── */
   function show(id) { document.getElementById(id).style.display = ''; }
   function hide(id) { document.getElementById(id).style.display = 'none'; }
@@ -826,7 +1348,11 @@
   hide('brands-empty');
   hide('brands-table-wrap');
   hide('prompts-area');
+  hide('attrs-empty');
+  hide('attrs-table-wrap');
+  hide('map-area');
   loadBrands();
+  loadAttributes();
 
 })();
 </script>
