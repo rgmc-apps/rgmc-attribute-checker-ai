@@ -16,7 +16,8 @@
       "Bash(py --version)",
       "Bash(py -m py_compile main.py)",
       "Bash(py -m py_compile helper/attribute_generator.py)",
-      "Bash(py -m py_compile logger/__init__.py)"
+      "Bash(py -m py_compile logger/__init__.py)",
+      "Bash(curl *)"
     ]
   }
 }

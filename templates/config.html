@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuration — RGMC Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ── */
+    :root {
+      --bg:        #FAF8F5;
+      --surface:   #FFFFFF;
+      --border:    #E8E2D9;
+      --border-lt: #F0EBE3;
+      --ink:       #1A1714;
+      --ink-2:     #44403C;
+      --muted:     #78716C;
+      --gold:      #9A6D2E;
+      --orange:    #D4700A;
+      --orange-lt: #FEF3E2;
+      --green:     #15803D;
+      --green-lt:  #DCFCE7;
+      --red:       #DC2626;
+      --red-lt:    #FEF2F2;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.05);
+      --shadow:    0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.05);
+      --r-sm:      6px;
+      --r:         12px;
+      --r-lg:      16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ════ HEADER ════ */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .header-brand img { height: 38px; width: auto; display: block; }
+    .header-divider { width: 1px; height: 28px; background: var(--border); margin: 0 16px; }
+    .header-title { display: flex; flex-direction: column; gap: 1px; }
+    .header-title h1 { font-size: .95rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .header-title span { font-size: .72rem; color: var(--muted); font-weight: 400; }
+    .header-spacer { flex: 1; }
+    .back-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--muted); font-size: .8rem; font-weight: 500;
+      text-decoration: none; padding: 6px 12px;
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      transition: background .12s, color .12s;
+    }
+    .back-link:hover { background: var(--bg); color: var(--ink); }
+
+    /* ════ PAGE ════ */
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 36px 20px 72px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .page-header { margin-bottom: 4px; }
+    .page-header h2 { font-size: 1.3rem; font-weight: 700; color: var(--ink); letter-spacing: -.02em; }
+    .page-header p { font-size: .875rem; color: var(--muted); margin-top: 4px; }
+
+    /* ════ SECTIONS ════ */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .section-head {
+      display: flex; align-items: center; gap: 12px;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border-lt);
+    }
+    .step-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--orange); color: #fff;
+      font-size: .75rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .section-head-text h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .section-head-text p { font-size: .76rem; color: var(--muted); margin-top: 1px; }
+    .section-body { padding: 22px; }
+
+    /* ════ FORM ELEMENTS ════ */
+    .field-label {
+      display: block; font-size: .78rem; font-weight: 600;
+      color: var(--ink-2); margin-bottom: 6px; letter-spacing: .01em;
+    }
+    .field-input {
+      width: 100%; border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 9px 12px; font-size: .83rem; font-family: inherit;
+      color: var(--ink); background: var(--bg);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field-input:focus {
+      outline: none; border-color: var(--orange);
+      box-shadow: 0 0 0 3px rgba(212,112,10,.1); background: var(--surface);
+    }
+    select.field-input { cursor: pointer; }
+    textarea.field-input { resize: vertical; line-height: 1.6; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .82rem; }
+
+    .form-row { display: flex; gap: 14px; }
+    .form-row .form-col { flex: 1; }
+    .form-col-sm { flex: 0 0 140px !important; }
+
+    .form-actions {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 14px; padding-top: 14px;
+      border-top: 1px solid var(--border-lt);
+    }
+
+    /* ════ BUTTONS ════ */
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--orange); color: #fff; border: none;
+      border-radius: var(--r-sm); padding: 9px 18px;
+      font-size: .83rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn-primary:hover:not(:disabled) { opacity: .88; }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--surface); color: var(--ink-2);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      padding: 9px 18px; font-size: .83rem; font-weight: 500;
+      font-family: inherit; cursor: pointer; transition: background .12s;
+    }
+    .btn-secondary:hover { background: var(--bg); }
+
+    .btn-add-new {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--orange); color: #fff; border: none;
+      border-radius: var(--r-sm); padding: 7px 14px;
+      font-size: .79rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: opacity .15s; margin-left: auto;
+    }
+    .btn-add-new:hover { opacity: .88; }
+
+    .btn-sm {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r-sm); padding: 5px 10px;
+      font-size: .74rem; font-weight: 500; font-family: inherit;
+      cursor: pointer; color: var(--ink-2);
+      transition: background .12s, border-color .12s, color .12s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: var(--bg); }
+    .btn-sm.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-lt); }
+    .btn-sm.activate:hover { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+
+    /* ════ BRAND FORM PANEL ════ */
+    .brand-form-panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+    .brand-form-panel h4 {
+      font-size: .83rem; font-weight: 600; color: var(--ink); margin-bottom: 14px;
+    }
+
+    /* ════ DATA TABLE ════ */
+    .table-wrap {
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .data-table thead tr { background: var(--bg); }
+    .data-table th {
+      text-align: left; padding: 9px 12px; font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .07em; color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 11px 12px; border-top: 1px solid var(--border-lt);
+      vertical-align: middle; color: var(--ink-2);
+    }
+    .data-table tbody tr:first-child td { border-top: none; }
+    .data-table tbody tr:hover td { background: var(--bg); }
+
+    .code-chip {
+      font-family: 'JetBrains Mono', monospace; font-size: .78rem;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 4px; padding: 2px 7px; color: var(--orange);
+    }
+    .id-cell { font-size: .73rem; color: var(--muted); }
+    .desc-cell { color: var(--muted); font-size: .8rem; max-width: 260px; }
+    .actions-cell { white-space: nowrap; }
+    .actions-cell .btn-sm + .btn-sm { margin-left: 5px; }
+
+    /* ════ EMPTY / LOADING ════ */
+    .state-text {
+      text-align: center; padding: 32px;
+      font-size: .83rem; color: var(--muted);
+    }
+    .state-text.loading { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .spinner {
+      width: 14px; height: 14px; border: 2px solid var(--border);
+      border-top-color: var(--orange); border-radius: 50%;
+      animation: spin .7s linear infinite; flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ════ BRAND SELECT ════ */
+    .brand-select-wrap { max-width: 360px; }
+
+    /* ════ PROMPTS PLACEHOLDER ════ */
+    .prompts-placeholder {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 10px; padding: 48px 24px; text-align: center;
+    }
+    .prompts-placeholder-icon {
+      width: 48px; height: 48px; background: var(--border-lt); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .prompts-placeholder-icon svg { stroke: var(--muted); }
+    .prompts-placeholder p { font-size: .85rem; color: var(--muted); }
+
+    /* ════ PROMPT ADD FORM ════ */
+    .prompt-add-form {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 18px; margin-bottom: 22px;
+    }
+    .prompt-add-form h4 {
+      font-size: .83rem; font-weight: 600; color: var(--ink); margin-bottom: 12px;
+    }
+    .prompt-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 12px; flex-wrap: wrap; gap: 10px;
+    }
+    .checkbox-label {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: .82rem; color: var(--ink-2); cursor: pointer; user-select: none;
+    }
+    .checkbox-label input[type=checkbox] { accent-color: var(--orange); width: 15px; height: 15px; cursor: pointer; }
+
+    /* ════ HISTORY LABEL ════ */
+    .history-label {
+      font-size: .78rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ════ PROMPT CARDS ════ */
+    .prompt-card {
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+      background: var(--surface); padding: 14px 16px;
+      margin-bottom: 8px; transition: border-color .15s;
+    }
+    .prompt-card.is-active {
+      border-color: #86EFAC; background: #F0FDF4;
+    }
+    .prompt-card-header {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .prompt-date { font-size: .73rem; color: var(--muted); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 9px; border-radius: 20px; font-size: .7rem; font-weight: 600;
+    }
+    .badge-active { background: var(--green-lt); color: var(--green); }
+    .badge-inactive { background: var(--border-lt); color: var(--muted); }
+    .card-actions { display: flex; gap: 5px; margin-left: auto; }
+
+    .prompt-text {
+      font-size: .82rem; line-height: 1.6; color: var(--ink-2);
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .prompt-text.truncated {
+      display: -webkit-box;
+      -webkit-line-clamp: 4;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .expand-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--orange); font-size: .75rem; font-weight: 500;
+      font-family: inherit; padding: 4px 0; display: inline-block; margin-top: 4px;
+    }
+    .expand-btn:hover { text-decoration: underline; }
+
+    /* ════ TOAST ════ */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      padding: 12px 18px; border-radius: var(--r-sm);
+      font-size: .83rem; font-weight: 500;
+      box-shadow: var(--shadow);
+      animation: toastIn .2s ease;
+      max-width: 340px;
+    }
+    .toast-success { background: #166534; color: #fff; }
+    .toast-error   { background: var(--red); color: #fff; }
+    .toast-info    { background: var(--ink); color: #fff; }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ════ RESPONSIVE ════ */
+    @media (max-width: 640px) {
+      header { padding: 0 16px; }
+      .page { padding: 24px 12px 60px; }
+      .section-body { padding: 16px; }
+      .form-row { flex-direction: column; }
+      .form-col-sm { flex: 1 !important; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <a class="header-brand" href="/">
+    <img src="{{ url_for('static', filename='logo.png') }}" alt="RGMC Group" />
+  </a>
+  <div class="header-divider"></div>
+  <div class="header-title">
+    <h1>Configuration</h1>
+    <span>Manage brands &amp; prompts</span>
+  </div>
+  <div class="header-spacer"></div>
+  <a href="/" class="back-link">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Generate Attributes
+  </a>
+</header>
+
+<!-- ══ MAIN ══ -->
+<div class="page">
+
+  <div class="page-header">
+    <h2>Brand &amp; Prompt Configuration</h2>
+    <p>Create brands and assign GPT prompt templates per brand.</p>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" style="display:none;"></div>
+
+  <!-- ══════════════════════════════════════
+       SECTION 1 — BRANDS
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">1</div>
+      <div class="section-head-text">
+        <h3>Brands</h3>
+        <p>Add and manage brand profiles</p>
+      </div>
+      <button class="btn-add-new" id="toggle-brand-form-btn" type="button">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Add Brand
+      </button>
+    </div>
+    <div class="section-body">
+
+      <!-- Brand add / edit form -->
+      <div class="brand-form-panel" id="brand-form-panel" style="display:none;">
+        <h4 id="brand-form-title">Add New Brand</h4>
+        <div class="form-row">
+          <div class="form-col form-col-sm">
+            <label class="field-label" for="f-brand-code">Brand Code *</label>
+            <input class="field-input" id="f-brand-code" type="text" placeholder="e.g. RGMC" maxlength="50" />
+          </div>
+          <div class="form-col">
+            <label class="field-label" for="f-brand-name">Brand Name *</label>
+            <input class="field-input" id="f-brand-name" type="text" placeholder="e.g. RGMC Fashion" maxlength="200" />
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <label class="field-label" for="f-brand-desc">Brand Description</label>
+          <input class="field-input" id="f-brand-desc" type="text" placeholder="Short description of the brand" />
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" id="save-brand-btn" type="button">Save Brand</button>
+          <button class="btn-secondary" id="cancel-brand-btn" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Brands table -->
+      <div id="brands-loading" class="state-text loading" style="display:none;">
+        <span class="spinner"></span> Loading brands…
+      </div>
+      <div id="brands-empty" class="state-text" style="display:none;">
+        No brands yet. Click <strong>Add Brand</strong> to get started.
+      </div>
+      <div class="table-wrap" id="brands-table-wrap" style="display:none;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:52px">ID</th>
+              <th style="width:120px">Code</th>
+              <th>Name</th>
+              <th>Description</th>
+              <th style="width:120px">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="brands-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       SECTION 2 — BRAND PROMPTS
+  ══════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-head">
+      <div class="step-num">2</div>
+      <div class="section-head-text">
+        <h3>Brand Prompts</h3>
+        <p>Assign GPT prompt templates per brand</p>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <!-- Brand selector -->
+      <div class="brand-select-wrap" style="margin-bottom:22px;">
+        <label class="field-label" for="brand-select">Select Brand</label>
+        <select class="field-input" id="brand-select">
+          <option value="">— Choose a brand —</option>
+        </select>
+      </div>
+
+      <!-- Placeholder (no brand selected) -->
+      <div id="prompts-placeholder" class="prompts-placeholder">
+        <div class="prompts-placeholder-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </div>
+        <p>Select a brand above to view and manage its prompts.</p>
+      </div>
+
+      <!-- Prompts area (shown when brand selected) -->
+      <div id="prompts-area" style="display:none;">
+
+        <!-- Add new prompt form -->
+        <div class="prompt-add-form">
+          <h4>New Prompt</h4>
+          <label class="field-label" for="f-prompt-text">Prompt Template</label>
+          <textarea class="field-input" id="f-prompt-text" rows="12"
+            placeholder="Enter the full GPT prompt for this brand…&#10;&#10;You can use the same format as the main page prompt template, including {{ATTRIBUTES}} as a placeholder if needed."></textarea>
+          <div class="prompt-footer">
+            <label class="checkbox-label">
+              <input type="checkbox" id="f-prompt-active" />
+              Set as active immediately
+            </label>
+            <button class="btn-primary" id="save-prompt-btn" type="button">
+              <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+              </svg>
+              Save Prompt
+            </button>
+          </div>
+        </div>
+
+        <!-- History -->
+        <p class="history-label">Prompt History</p>
+
+        <div id="prompts-loading" class="state-text loading" style="display:none;">
+          <span class="spinner"></span> Loading prompts…
+        </div>
+        <div id="prompts-empty" class="state-text" style="display:none;">
+          No prompts saved for this brand yet.
+        </div>
+        <div id="prompts-list"></div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+(function () {
+  /* ── State ── */
+  let brands = [];
+  let editingBrandId = null;
+  let currentBrandId = null;
+
+  /* ── API helper ── */
+  async function api(method, path, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch(path, opts);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Request failed (' + res.status + ')');
+    return json;
+  }
+
+  /* ── Toast ── */
+  let toastTimer;
+  function toast(msg, type = 'info') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast toast-' + type;
+    el.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  }
+
+  /* ── HTML escape ── */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ════════════════════════════════
+     BRANDS
+  ════════════════════════════════ */
+
+  async function loadBrands() {
+    show('brands-loading');
+    hide('brands-empty');
+    hide('brands-table-wrap');
+    try {
+      brands = await api('GET', '/api/brands');
+      renderBrands();
+      renderBrandDropdown();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      hide('brands-loading');
+    }
+  }
+
+  function renderBrands() {
+    if (!brands.length) {
+      show('brands-empty');
+      hide('brands-table-wrap');
+      return;
+    }
+    hide('brands-empty');
+    show('brands-table-wrap');
+
+    const tbody = document.getElementById('brands-tbody');
+    tbody.innerHTML = '';
+    brands.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        `<td class="id-cell">#${b.brand_id}</td>` +
+        `<td><span class="code-chip">${esc(b.brand_code)}</span></td>` +
+        `<td style="font-weight:500;color:var(--ink)">${esc(b.brand_name)}</td>` +
+        `<td class="desc-cell">${esc(b.brand_desc || '—')}</td>` +
+        `<td class="actions-cell">` +
+          `<button class="btn-sm" onclick="startEditBrand(${b.brand_id})">Edit</button>` +
+          `<button class="btn-sm danger" onclick="deleteBrand(${b.brand_id},'${esc(b.brand_name)}')">Delete</button>` +
+        `</td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderBrandDropdown() {
+    const sel = document.getElementById('brand-select');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">— Choose a brand —</option>';
+    brands.forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b.brand_id;
+      opt.textContent = b.brand_code + ' — ' + b.brand_name;
+      sel.appendChild(opt);
+    });
+    if (prev && brands.some(b => String(b.brand_id) === prev)) {
+      sel.value = prev;
+    }
+  }
+
+  /* Brand form open / close */
+  document.getElementById('toggle-brand-form-btn').addEventListener('click', () => {
+    const panel = document.getElementById('brand-form-panel');
+    if (panel.style.display === 'none') {
+      resetBrandForm('Add New Brand');
+      panel.style.display = 'block';
+      document.getElementById('f-brand-code').focus();
+    } else {
+      panel.style.display = 'none';
+      editingBrandId = null;
+    }
+  });
+
+  document.getElementById('cancel-brand-btn').addEventListener('click', () => {
+    document.getElementById('brand-form-panel').style.display = 'none';
+    editingBrandId = null;
+  });
+
+  function resetBrandForm(title) {
+    editingBrandId = null;
+    document.getElementById('brand-form-title').textContent = title;
+    document.getElementById('f-brand-code').value = '';
+    document.getElementById('f-brand-name').value = '';
+    document.getElementById('f-brand-desc').value = '';
+    document.getElementById('save-brand-btn').textContent = 'Save Brand';
+  }
+
+  window.startEditBrand = function (id) {
+    const b = brands.find(x => x.brand_id === id);
+    if (!b) return;
+    editingBrandId = id;
+    document.getElementById('brand-form-title').textContent = 'Edit Brand';
+    document.getElementById('f-brand-code').value = b.brand_code;
+    document.getElementById('f-brand-name').value = b.brand_name;
+    document.getElementById('f-brand-desc').value = b.brand_desc || '';
+    document.getElementById('save-brand-btn').textContent = 'Update Brand';
+    document.getElementById('brand-form-panel').style.display = 'block';
+    document.getElementById('f-brand-code').focus();
+    document.getElementById('brand-form-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  document.getElementById('save-brand-btn').addEventListener('click', async () => {
+    const code = document.getElementById('f-brand-code').value.trim();
+    const name = document.getElementById('f-brand-name').value.trim();
+    const desc = document.getElementById('f-brand-desc').value.trim();
+    if (!code) { toast('Brand Code is required.', 'error'); return; }
+    if (!name) { toast('Brand Name is required.', 'error'); return; }
+
+    const btn = document.getElementById('save-brand-btn');
+    btn.disabled = true;
+    try {
+      if (editingBrandId) {
+        await api('PUT', '/api/brands/' + editingBrandId, { brand_code: code, brand_name: name, brand_desc: desc });
+        toast('Brand updated.', 'success');
+      } else {
+        await api('POST', '/api/brands', { brand_code: code, brand_name: name, brand_desc: desc });
+        toast('Brand created.', 'success');
+      }
+      document.getElementById('brand-form-panel').style.display = 'none';
+      await loadBrands();
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  window.deleteBrand = async function (id, name) {
+    if (!confirm('Delete brand "' + name + '"?\n\nAll prompts for this brand will also be deleted.')) return;
+    try {
+      await api('DELETE', '/api/brands/' + id);
+      toast('Brand deleted.', 'success');
+      if (currentBrandId === id) {
+        currentBrandId = null;
+        document.getElementById('brand-select').value = '';
+        showPromptPlaceholder();
+      }
+      await loadBrands();
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  /* ════════════════════════════════
+     BRAND PROMPTS
+  ════════════════════════════════ */
+
+  document.getElementById('brand-select').addEventListener('change', async function () {
+    currentBrandId = this.value ? parseInt(this.value, 10) : null;
+    if (currentBrandId) {
+      showPromptsArea();
+      await loadPrompts(currentBrandId);
+    } else {
+      showPromptPlaceholder();
+    }
+  });
+
+  function showPromptsArea() {
+    hide('prompts-placeholder');
+    show('prompts-area');
+  }
+
+  function showPromptPlaceholder() {
+    hide('prompts-area');
+    show('prompts-placeholder');
+  }
+
+  async function loadPrompts(brandId) {
+    show('prompts-loading');
+    hide('prompts-empty');
+    document.getElementById('prompts-list').innerHTML = '';
+    try {
+      const prompts = await api('GET', '/api/brands/' + brandId + '/prompts');
+      renderPrompts(prompts);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      hide('prompts-loading');
+    }
+  }
+
+  function renderPrompts(prompts) {
+    const list = document.getElementById('prompts-list');
+    if (!prompts.length) {
+      show('prompts-empty');
+      list.innerHTML = '';
+      return;
+    }
+    hide('prompts-empty');
+    list.innerHTML = '';
+
+    prompts.forEach(p => {
+      const date = new Date(p.created_at).toLocaleString('en-PH', {
+        year: 'numeric', month: 'short', day: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      });
+
+      const card = document.createElement('div');
+      card.className = 'prompt-card' + (p.is_active ? ' is-active' : '');
+      card.id = 'pcard-' + p.id;
+
+      const activateBtn = !p.is_active
+        ? `<button class="btn-sm activate" onclick="activatePrompt(${p.id})">Set Active</button>`
+        : '';
+
+      card.innerHTML =
+        `<div class="prompt-card-header">` +
+          `<span class="prompt-date">${esc(date)}</span>` +
+          `<span class="badge ${p.is_active ? 'badge-active' : 'badge-inactive'}">` +
+            `${p.is_active ? '● Active' : '○ Inactive'}` +
+          `</span>` +
+          `<div class="card-actions">` +
+            activateBtn +
+            `<button class="btn-sm danger" onclick="deletePrompt(${p.id})">Delete</button>` +
+          `</div>` +
+        `</div>` +
+        `<div class="prompt-text truncated" id="ptext-${p.id}">${esc(p.brand_prompt)}</div>` +
+        `<button class="expand-btn" id="pexp-${p.id}" onclick="toggleExpand(${p.id})">Show more ▾</button>`;
+
+      list.appendChild(card);
+    });
+  }
+
+  window.toggleExpand = function (id) {
+    const el  = document.getElementById('ptext-' + id);
+    const btn = document.getElementById('pexp-' + id);
+    const collapsed = el.classList.toggle('truncated');
+    btn.textContent = collapsed ? 'Show more ▾' : 'Show less ▴';
+  };
+
+  window.activatePrompt = async function (id) {
+    try {
+      await api('POST', '/api/prompts/' + id + '/activate');
+      toast('Prompt set as active.', 'success');
+      if (currentBrandId) await loadPrompts(currentBrandId);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  window.deletePrompt = async function (id) {
+    if (!confirm('Delete this prompt? This cannot be undone.')) return;
+    try {
+      await api('DELETE', '/api/prompts/' + id);
+      toast('Prompt deleted.', 'success');
+      if (currentBrandId) await loadPrompts(currentBrandId);
+    } catch (e) {
+      toast(e.message, 'error');
+    }
+  };
+
+  document.getElementById('save-prompt-btn').addEventListener('click', async () => {
+    if (!currentBrandId) { toast('Select a brand first.', 'error'); return; }
+    const text = document.getElementById('f-prompt-text').value.trim();
+    if (!text) { toast('Prompt text is required.', 'error'); return; }
+    const isActive = document.getElementById('f-prompt-active').checked;
+
+    const btn = document.getElementById('save-prompt-btn');
+    btn.disabled = true;
+    try {
+      await api('POST', '/api/brands/' + currentBrandId + '/prompts', {
+        brand_prompt: text,
+        is_active: isActive,
+      });
+      toast('Prompt saved.', 'success');
+      document.getElementById('f-prompt-text').value = '';
+      document.getElementById('f-prompt-active').checked = false;
+      await loadPrompts(currentBrandId);
+    } catch (e) {
+      toast(e.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ── Utilities ── */
+  function show(id) { document.getElementById(id).style.display = ''; }
+  function hide(id) { document.getElementById(id).style.display = 'none'; }
+
+  /* ── Init ── */
+  hide('brands-empty');
+  hide('brands-table-wrap');
+  hide('prompts-area');
+  loadBrands();
+
+})();
+</script>
+
+</body>
+</html>

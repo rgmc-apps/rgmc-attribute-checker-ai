@@ -10,11 +10,39 @@ from flask import Flask, jsonify, render_template, request, send_file
 from helper.attribute_generator import AttributeGenerator
 from logger import LogHandler
 
+try:
+    from supabase import create_client as _supabase_create
+    _SUPABASE_AVAILABLE = True
+except ImportError:
+    _SUPABASE_AVAILABLE = False
+
 LogHandler('attribute-checker')
 logger = logging.getLogger('attribute-checker')
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
+
+# ---------------------------------------------------------------------------
+# Supabase client (lazy-initialised on first use)
+# ---------------------------------------------------------------------------
+
+_SUPABASE_URL = 'https://eesrzpgmsrbhjeenfojq.supabase.co'
+_sb_instance = None
+
+
+def _sb():
+    global _sb_instance
+    if not _SUPABASE_AVAILABLE:
+        raise RuntimeError('supabase package not installed. Run: pip install supabase')
+    if _sb_instance is None:
+        key = os.environ.get('SUPABASE_KEY', '')
+        if not key:
+            raise RuntimeError('SUPABASE_KEY environment variable is not set.')
+        _sb_instance = _supabase_create(
+            os.environ.get('SUPABASE_URL', _SUPABASE_URL), key
+        )
+    return _sb_instance
+
 
 JOBS: dict = {}
 
@@ -138,6 +166,133 @@ def download_result(job_id):
         download_name='attribute-checker-results.zip',
         mimetype='application/zip',
     )
+
+
+# ---------------------------------------------------------------------------
+# Configuration — page
+# ---------------------------------------------------------------------------
+
+@app.route('/config')
+def config_page():
+    return render_template('config.html')
+
+
+# ---------------------------------------------------------------------------
+# Configuration — Brands API
+# ---------------------------------------------------------------------------
+
+@app.route('/api/brands', methods=['GET'])
+def api_brands_list():
+    try:
+        res = _sb().table('brands').select('*').order('brand_name').execute()
+        return jsonify(res.data)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/brands', methods=['POST'])
+def api_brands_create():
+    data = request.get_json(force=True) or {}
+    code = (data.get('brand_code') or '').strip()
+    name = (data.get('brand_name') or '').strip()
+    desc = (data.get('brand_desc') or '').strip()
+    if not code or not name:
+        return jsonify({'error': 'brand_code and brand_name are required.'}), 400
+    try:
+        res = _sb().table('brands').insert(
+            {'brand_code': code, 'brand_name': name, 'brand_desc': desc}
+        ).execute()
+        return jsonify(res.data[0] if res.data else {}), 201
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/brands/<int:brand_id>', methods=['PUT'])
+def api_brands_update(brand_id):
+    data = request.get_json(force=True) or {}
+    code = (data.get('brand_code') or '').strip()
+    name = (data.get('brand_name') or '').strip()
+    desc = (data.get('brand_desc') or '').strip()
+    if not code or not name:
+        return jsonify({'error': 'brand_code and brand_name are required.'}), 400
+    try:
+        res = _sb().table('brands').update(
+            {'brand_code': code, 'brand_name': name, 'brand_desc': desc}
+        ).eq('brand_id', brand_id).execute()
+        return jsonify(res.data[0] if res.data else {})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/brands/<int:brand_id>', methods=['DELETE'])
+def api_brands_delete(brand_id):
+    try:
+        _sb().table('brands').delete().eq('brand_id', brand_id).execute()
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+# ---------------------------------------------------------------------------
+# Configuration — Brand Prompts API
+# ---------------------------------------------------------------------------
+
+@app.route('/api/brands/<int:brand_id>/prompts', methods=['GET'])
+def api_brand_prompts_list(brand_id):
+    try:
+        res = (
+            _sb().table('brand_prompts')
+            .select('*')
+            .eq('brand_id', brand_id)
+            .order('created_at', desc=True)
+            .execute()
+        )
+        return jsonify(res.data)
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/brands/<int:brand_id>/prompts', methods=['POST'])
+def api_brand_prompts_create(brand_id):
+    data = request.get_json(force=True) or {}
+    prompt_text = (data.get('brand_prompt') or '').strip()
+    make_active = bool(data.get('is_active', False))
+    if not prompt_text:
+        return jsonify({'error': 'brand_prompt is required.'}), 400
+    try:
+        client = _sb()
+        if make_active:
+            client.table('brand_prompts').update({'is_active': False}).eq('brand_id', brand_id).execute()
+        res = client.table('brand_prompts').insert({
+            'brand_id':     brand_id,
+            'brand_prompt': prompt_text,
+            'is_active':    make_active,
+        }).execute()
+        return jsonify(res.data[0] if res.data else {}), 201
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/prompts/<int:prompt_id>/activate', methods=['POST'])
+def api_prompt_activate(prompt_id):
+    try:
+        client = _sb()
+        info = client.table('brand_prompts').select('brand_id').eq('id', prompt_id).single().execute()
+        brand_id = info.data['brand_id']
+        client.table('brand_prompts').update({'is_active': False}).eq('brand_id', brand_id).execute()
+        client.table('brand_prompts').update({'is_active': True}).eq('id', prompt_id).execute()
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+
+
+@app.route('/api/prompts/<int:prompt_id>', methods=['DELETE'])
+def api_prompt_delete(prompt_id):
+    try:
+        _sb().table('brand_prompts').delete().eq('id', prompt_id).execute()
+        return jsonify({'ok': True})
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
 
 
 # ---------------------------------------------------------------------------
