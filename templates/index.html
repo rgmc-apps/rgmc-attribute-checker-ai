@@ -647,6 +647,84 @@
       .format-grid { grid-template-columns: 1fr; }
       .upload-btns { flex-direction: column; }
     }
+
+    /* ════════════════════════════════
+       HOW-IT-WORKS BANNER
+    ════════════════════════════════ */
+    .hiw-banner {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .hiw-banner-head {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .hiw-eyebrow {
+      display: block; font-size: .68rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--orange); margin-bottom: 2px;
+    }
+    .hiw-banner-head h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .hiw-dismiss {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: .75rem; font-weight: 500; font-family: inherit;
+      padding: 5px 10px; border-radius: var(--r-sm); flex-shrink: 0;
+      transition: background .12s, color .12s; white-space: nowrap;
+    }
+    .hiw-dismiss:hover { background: var(--bg); color: var(--ink); }
+    .hiw-steps {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .hiw-step { display: flex; gap: 10px; align-items: flex-start; }
+    .hiw-step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange-lt); border: 1px solid rgba(212,112,10,.22);
+      color: var(--orange); font-size: .7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .hiw-step-title { font-size: .8rem; font-weight: 600; color: var(--ink); display: block; }
+    .hiw-step-desc { font-size: .73rem; color: var(--muted); margin-top: 2px; line-height: 1.4; display: block; }
+
+    /* ════════════════════════════════
+       HINT TOOLTIP
+    ════════════════════════════════ */
+    .hint-wrap { position: relative; display: inline-flex; align-items: center; flex-shrink: 0; }
+    .hint-btn {
+      width: 15px; height: 15px; border-radius: 50%;
+      background: var(--border-lt); border: 1px solid var(--border);
+      color: var(--muted); font-size: .64rem; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; transition: background .12s, color .12s;
+      margin-left: 4px; font-family: inherit; line-height: 1;
+    }
+    .hint-btn:hover, .hint-btn:focus {
+      background: var(--orange-lt); border-color: rgba(212,112,10,.3);
+      color: var(--orange); outline: none;
+    }
+    .hint-tip {
+      position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+      background: var(--ink); color: #F5F3F0; font-size: .74rem; line-height: 1.45;
+      padding: 8px 11px; border-radius: var(--r-sm);
+      width: 220px; z-index: 300; pointer-events: none;
+      opacity: 0; transition: opacity .18s; font-weight: 400;
+    }
+    .hint-tip::before {
+      content: ''; position: absolute; right: 100%; top: 50%; transform: translateY(-50%);
+      border: 5px solid transparent; border-right-color: var(--ink);
+    }
+    .hint-wrap:hover .hint-tip,
+    .hint-wrap:focus-within .hint-tip { opacity: 1; }
+
+    @media (max-width: 640px) {
+      .hiw-steps { grid-template-columns: 1fr 1fr; }
+      .hint-tip { left: auto; right: 0; top: calc(100% + 6px); transform: none; width: 200px; }
+      .hint-tip::before { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -671,6 +749,50 @@
 
 <!-- ══ MAIN ══ -->
 <div class="page">
+
+  <!-- How-It-Works banner (first-run, dismissed via localStorage) -->
+  <div class="hiw-banner" id="hiw-banner">
+    <div class="hiw-banner-head">
+      <div>
+        <span class="hiw-eyebrow">First time here?</span>
+        <h3>How it works</h3>
+      </div>
+      <button class="hiw-dismiss" id="hiw-dismiss" type="button">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Got it, dismiss
+      </button>
+    </div>
+    <div class="hiw-steps">
+      <div class="hiw-step">
+        <div class="hiw-step-num">1</div>
+        <div>
+          <span class="hiw-step-title">Upload images</span>
+          <span class="hiw-step-desc">Drop files or folders — JPG, PNG, WEBP accepted</span>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-step-num">2</div>
+        <div>
+          <span class="hiw-step-title">Set your prompt</span>
+          <span class="hiw-step-desc">Use the default or load a saved brand template from Config</span>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-step-num">3</div>
+        <div>
+          <span class="hiw-step-title">Configure attributes</span>
+          <span class="hiw-step-desc">Define exactly what GPT should extract from each photo</span>
+        </div>
+      </div>
+      <div class="hiw-step">
+        <div class="hiw-step-num">4</div>
+        <div>
+          <span class="hiw-step-title">Generate &amp; download</span>
+          <span class="hiw-step-desc">Get Excel, CSV, or text files ready for your listings</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="page-header">
     <h2>Generate Product Attributes</h2>
@@ -778,7 +900,11 @@
     <div class="section-body">
       <!-- Prompt source toggle -->
       <div class="ps-row">
-        <span class="ps-label">Prompt source</span>
+        <div class="hint-wrap">
+          <span class="ps-label">Prompt source</span>
+          <button class="hint-btn" type="button" aria-label="About prompt source">?</button>
+          <div class="hint-tip" role="tooltip">Default uses the built-in template. Brand Prompt loads a saved active template from Config for the selected brand.</div>
+        </div>
         <div class="ps-toggle">
           <label class="ps-option">
             <input type="radio" name="prompt_source" value="default" checked id="ps-default" />
@@ -843,7 +969,11 @@
     <div class="section-body">
       <!-- Attribute source toggle -->
       <div class="ps-row" style="margin-bottom:16px;">
-        <span class="ps-label">Attribute source</span>
+        <div class="hint-wrap">
+          <span class="ps-label">Attribute source</span>
+          <button class="hint-btn" type="button" aria-label="About attribute source">?</button>
+          <div class="hint-tip" role="tooltip">Custom uses the attributes listed here. Brand Attributes loads the set mapped to the selected brand in Config.</div>
+        </div>
         <div class="ps-toggle">
           <label class="ps-option">
             <input type="radio" name="attr_source" value="custom" checked id="as-custom" />
@@ -1592,6 +1722,20 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+})();
+
+// How-It-Works banner — hide if already dismissed
+(function () {
+  var banner = document.getElementById('hiw-banner');
+  if (!banner) return;
+  if (localStorage.getItem('rgmc-hiw-seen')) {
+    banner.style.display = 'none';
+    return;
+  }
+  document.getElementById('hiw-dismiss').addEventListener('click', function () {
+    banner.style.display = 'none';
+    localStorage.setItem('rgmc-hiw-seen', '1');
+  });
 })();
 </script>
 

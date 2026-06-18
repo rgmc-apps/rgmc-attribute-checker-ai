@@ -404,6 +404,56 @@
     .attr-map-btn:hover:not(:disabled) { background: var(--bg); color: var(--ink); }
     .attr-map-btn:disabled { opacity: .3; cursor: not-allowed; }
 
+    /* ════ SETUP GUIDE ════ */
+    .setup-guide {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 20px 22px;
+      box-shadow: var(--shadow-sm);
+    }
+    .sg-head {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .sg-eyebrow {
+      display: block; font-size: .68rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: var(--orange); margin-bottom: 2px;
+    }
+    .sg-head h3 { font-size: .875rem; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+    .sg-dismiss {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: .75rem; font-weight: 500; font-family: inherit;
+      padding: 5px 10px; border-radius: var(--r-sm); flex-shrink: 0;
+      transition: background .12s, color .12s; white-space: nowrap;
+    }
+    .sg-dismiss:hover { background: var(--bg); color: var(--ink); }
+    .sg-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .sg-item { display: flex; gap: 10px; align-items: flex-start; }
+    .sg-item-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--orange-lt); border: 1px solid rgba(212,112,10,.22);
+      color: var(--orange); font-size: .7rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .sg-item-title { font-size: .8rem; font-weight: 600; color: var(--ink); display: block; }
+    .sg-item-desc { font-size: .73rem; color: var(--muted); margin-top: 2px; line-height: 1.4; display: block; }
+
+    /* ════ ENHANCED EMPTY STATES ════ */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 40px 24px; text-align: center; gap: 8px;
+    }
+    .empty-icon {
+      width: 52px; height: 52px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin-bottom: 4px;
+    }
+    .empty-icon svg { stroke: var(--muted); }
+    .empty-title { font-size: .875rem; font-weight: 600; color: var(--ink); }
+    .empty-desc { font-size: .8rem; color: var(--muted); max-width: 300px; line-height: 1.5; margin-bottom: 4px; }
+
     /* ════ RESPONSIVE ════ */
     @media (max-width: 640px) {
       header { padding: 0 16px; }
@@ -411,6 +461,7 @@
       .section-body { padding: 16px; }
       .form-row { flex-direction: column; }
       .form-col-sm { flex: 1 !important; }
+      .sg-steps { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -445,6 +496,50 @@
 
   <!-- Toast -->
   <div id="toast" class="toast" style="display:none;"></div>
+
+  <!-- Setup guide (first-run, dismissed via localStorage) -->
+  <div class="setup-guide" id="setup-guide">
+    <div class="sg-head">
+      <div>
+        <span class="sg-eyebrow">First time here?</span>
+        <h3>Complete setup in order to get the best results</h3>
+      </div>
+      <button class="sg-dismiss" id="sg-dismiss" type="button">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Got it
+      </button>
+    </div>
+    <div class="sg-steps">
+      <div class="sg-item">
+        <div class="sg-item-num">1</div>
+        <div>
+          <span class="sg-item-title">Brands</span>
+          <span class="sg-item-desc">Create brand profiles with a short code and display name</span>
+        </div>
+      </div>
+      <div class="sg-item">
+        <div class="sg-item-num">2</div>
+        <div>
+          <span class="sg-item-title">Brand Prompts</span>
+          <span class="sg-item-desc">Save GPT prompt templates and assign one as active per brand</span>
+        </div>
+      </div>
+      <div class="sg-item">
+        <div class="sg-item-num">3</div>
+        <div>
+          <span class="sg-item-title">Attributes</span>
+          <span class="sg-item-desc">Build a global catalog of product attributes (Material, Fit, etc.)</span>
+        </div>
+      </div>
+      <div class="sg-item">
+        <div class="sg-item-num">4</div>
+        <div>
+          <span class="sg-item-title">Brand Mapping</span>
+          <span class="sg-item-desc">Choose which attributes apply to each brand and set their order</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- ══════════════════════════════════════
        SECTION 1 — BRANDS
@@ -492,8 +587,18 @@
       <div id="brands-loading" class="state-text loading" style="display:none;">
         <span class="spinner"></span> Loading brands…
       </div>
-      <div id="brands-empty" class="state-text" style="display:none;">
-        No brands yet. Click <strong>Add Brand</strong> to get started.
+      <div id="brands-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>
+          </svg>
+        </div>
+        <span class="empty-title">No brands yet</span>
+        <span class="empty-desc">Brands organize prompt templates and attribute sets for different product lines.</span>
+        <button class="btn-primary" type="button" id="brands-empty-cta">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add First Brand
+        </button>
       </div>
       <div class="table-wrap" id="brands-table-wrap" style="display:none;">
         <table class="data-table">
@@ -585,8 +690,14 @@
         <div id="prompts-loading" class="state-text loading" style="display:none;">
           <span class="spinner"></span> Loading prompts…
         </div>
-        <div id="prompts-empty" class="state-text" style="display:none;">
-          No prompts saved for this brand yet.
+        <div id="prompts-empty" class="empty-state" style="display:none;">
+          <div class="empty-icon">
+            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <span class="empty-title">No prompts for this brand</span>
+          <span class="empty-desc">Use the form above to write and save a GPT prompt template for this brand.</span>
         </div>
         <div id="prompts-list"></div>
 
@@ -636,8 +747,19 @@
       <div id="attrs-loading" class="state-text loading" style="display:none;">
         <span class="spinner"></span> Loading attributes…
       </div>
-      <div id="attrs-empty" class="state-text" style="display:none;">
-        No attributes yet. Click <strong>Add Attribute</strong> to create one.
+      <div id="attrs-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon">
+          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" viewBox="0 0 24 24">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <span class="empty-title">No attributes yet</span>
+        <span class="empty-desc">Attributes tell GPT what to extract from each photo — things like Material, Fit, or Style.</span>
+        <button class="btn-primary" type="button" id="attrs-empty-cta">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add First Attribute
+        </button>
       </div>
       <div class="table-wrap" id="attrs-table-wrap" style="display:none;">
         <table class="data-table">
@@ -1344,6 +1466,20 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   function show(id) { document.getElementById(id).style.display = ''; }
   function hide(id) { document.getElementById(id).style.display = 'none'; }
 
+  /* ── Empty state CTAs ── */
+  var brandsEmptyCta = document.getElementById('brands-empty-cta');
+  if (brandsEmptyCta) {
+    brandsEmptyCta.addEventListener('click', function () {
+      document.getElementById('toggle-brand-form-btn').click();
+    });
+  }
+  var attrsEmptyCta = document.getElementById('attrs-empty-cta');
+  if (attrsEmptyCta) {
+    attrsEmptyCta.addEventListener('click', function () {
+      document.getElementById('toggle-attr-form-btn').click();
+    });
+  }
+
   /* ── Init ── */
   hide('brands-empty');
   hide('brands-table-wrap');
@@ -1354,6 +1490,20 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   loadBrands();
   loadAttributes();
 
+})();
+
+// Setup guide — hide if already dismissed
+(function () {
+  var guide = document.getElementById('setup-guide');
+  if (!guide) return;
+  if (localStorage.getItem('rgmc-sg-seen')) {
+    guide.style.display = 'none';
+    return;
+  }
+  document.getElementById('sg-dismiss').addEventListener('click', function () {
+    guide.style.display = 'none';
+    localStorage.setItem('rgmc-sg-seen', '1');
+  });
 })();
 </script>
 

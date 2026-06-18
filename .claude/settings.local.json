@@ -33,7 +33,8 @@
       "PowerShell(node --version 2>$null; npx --version 2>$null)",
       "PowerShell($env:SUPABASE_URL; $env:SUPABASE_KEY; $env:DATABASE_URL; $env:SUPABASE_DB_URL; $env:POSTGRES_URL)",
       "PowerShell(npx -y @supabase/mcp-server-supabase@latest --help 2>&1 | Select-Object -First 20)",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(node *)"
     ]
   }
 }
