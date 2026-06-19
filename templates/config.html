@@ -368,19 +368,32 @@
     /* ════ TOAST ════ */
     .toast {
       position: fixed; bottom: 24px; right: 24px; z-index: 999;
-      padding: 12px 18px; border-radius: var(--r-sm);
+      padding: 12px 18px 16px; border-radius: var(--r-sm);
       font-size: .83rem; font-weight: 500;
       box-shadow: var(--shadow);
-      animation: toastIn .2s ease;
-      max-width: 340px;
+      max-width: 340px; overflow: hidden;
     }
     .toast-success { background: #166534; color: #fff; }
     .toast-error   { background: var(--red); color: #fff; }
     .toast-info    { background: var(--ink); color: #fff; }
-    @keyframes toastIn {
+    @keyframes tableRowIn {
       from { opacity: 0; transform: translateY(8px); }
       to   { opacity: 1; transform: translateY(0); }
     }
+    @keyframes attrMapRowIn {
+      from { opacity: 0; transform: translateX(-6px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .drag-handle {
+      cursor: grab; color: var(--border); flex-shrink: 0;
+      padding: 0 6px 0 0;
+      display: flex; align-items: center; transition: color .15s;
+      touch-action: none;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    .attr-map-row:hover .drag-handle { color: var(--muted); }
+    .attr-map-row.dragging { opacity: .35; }
+    .attr-map-row.drag-over { box-shadow: inset 0 2px 0 var(--orange); }
 
     /* ════ ATTR MAP ROWS ════ */
     .attr-map-row {
@@ -481,6 +494,11 @@
       .form-row { flex-direction: column; }
       .form-col-sm { flex: 1 !important; }
       .sg-steps { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .page > .section, tr, .attr-map-row { animation: none !important; }
+      .toast { animation: none !important; }
     }
   </style>
 </head>
@@ -968,13 +986,31 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
   /* ── Toast ── */
   let toastTimer;
-  function toast(msg, type = 'info') {
+  let toastLeaveTimer;
+  function toast(msg, type, dur) {
+    type = type || 'info'; dur = dur || 3500;
     const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'toast toast-' + type;
-    el.style.display = 'block';
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3500);
+    clearTimeout(toastLeaveTimer);
+    el.className = 'toast toast-' + type;
+    el.innerHTML = esc(msg) + '<div id="toast-bar" style="position:absolute;bottom:0;left:0;height:3px;background:rgba(255,255,255,.45);border-radius:0 0 0 6px;"></div>';
+    el.style.display = 'block';
+    el.animate([
+      { opacity: 0, transform: 'translateX(calc(100% + 24px))' },
+      { opacity: 1, transform: 'translateX(0)' }
+    ], { duration: 320, easing: 'cubic-bezier(0.34,1.56,0.64,1)', fill: 'forwards' });
+    const bar = document.getElementById('toast-bar');
+    if (bar) {
+      bar.style.width = '100%';
+      bar.animate([{ width: '100%' }, { width: '0%' }], { duration: dur, easing: 'linear', fill: 'forwards' });
+    }
+    toastTimer = setTimeout(() => {
+      const leave = el.animate([
+        { opacity: 1, transform: 'translateX(0)' },
+        { opacity: 0, transform: 'translateX(calc(100% + 24px))' }
+      ], { duration: 220, easing: 'cubic-bezier(0.4,0,1,1)', fill: 'forwards' });
+      leave.onfinish = () => { el.style.display = 'none'; };
+    }, dur);
   }
 
   /* ── HTML escape ── */
@@ -1014,7 +1050,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
     const tbody = document.getElementById('brands-tbody');
     tbody.innerHTML = '';
-    brands.forEach(b => {
+    brands.forEach((b, i) => {
       const tr = document.createElement('tr');
       tr.innerHTML =
         `<td class="id-cell">#${b.brand_id}</td>` +
@@ -1025,6 +1061,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           `<button class="btn-sm" onclick="startEditBrand(${b.brand_id})">Edit</button>` +
           `<button class="btn-sm danger" onclick="deleteBrand(${b.brand_id},'${esc(b.brand_name)}')">Delete</button>` +
         `</td>`;
+      tr.style.animation = 'tableRowIn .3s cubic-bezier(0.16,1,0.3,1) ' + (i * 45) + 'ms both';
       tbody.appendChild(tr);
     });
   }
@@ -1292,7 +1329,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     hide('attrs-empty'); show('attrs-table-wrap');
     const tbody = document.getElementById('attrs-tbody');
     tbody.innerHTML = '';
-    attributes.forEach(a => {
+    attributes.forEach((a, i) => {
       const tr = document.createElement('tr');
       tr.innerHTML =
         `<td class="id-cell">#${a.attribute_id}</td>` +
@@ -1302,6 +1339,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           `<button class="btn-sm" onclick="startEditAttr(${a.attribute_id})">Edit</button>` +
           `<button class="btn-sm danger" onclick="deleteAttr(${a.attribute_id},'${esc(a.attribute_name)}')">Delete</button>` +
         `</td>`;
+      tr.style.animation = 'tableRowIn .3s cubic-bezier(0.16,1,0.3,1) ' + (i * 45) + 'ms both';
       tbody.appendChild(tr);
     });
   }
@@ -1414,6 +1452,39 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     }
   }
 
+  let dragSrc = null;
+
+  function addDragBehavior(row) {
+    row.draggable = true;
+    row.addEventListener('dragstart', e => {
+      dragSrc = row;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      dragSrc = null;
+      row.classList.remove('dragging');
+      document.querySelectorAll('#attr-map-list .attr-map-row').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (dragSrc && row !== dragSrc) row.classList.add('drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (!dragSrc || dragSrc === row) return;
+      const list = document.getElementById('attr-map-list');
+      const rows = Array.from(list.querySelectorAll('.attr-map-row'));
+      const si = rows.indexOf(dragSrc);
+      const di = rows.indexOf(row);
+      list.insertBefore(dragSrc, si < di ? row.nextSibling : row);
+      updateMoveButtons();
+    });
+  }
+
   function renderMappingList(allAttrs, brandAttrs) {
     const list = document.getElementById('attr-map-list');
     list.innerHTML = '';
@@ -1421,12 +1492,20 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     const mapped    = brandAttrs.map(ba => allAttrs.find(a => a.attribute_id === ba.attribute_id)).filter(Boolean);
     const unmapped  = allAttrs.filter(a => !mappedIds.has(a.attribute_id));
 
-    [...mapped, ...unmapped].forEach(attr => {
+    [...mapped, ...unmapped].forEach((attr, rowIdx) => {
       const row = document.createElement('div');
       row.className = 'attr-map-row';
       row.dataset.attrId = attr.attribute_id;
+      row.style.animation = 'attrMapRowIn .28s cubic-bezier(0.16,1,0.3,1) ' + (rowIdx * 35) + 'ms both';
       const checked = mappedIds.has(attr.attribute_id);
       row.innerHTML =
+        `<div class="drag-handle" title="Drag to reorder">` +
+          `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">` +
+            `<circle cx="3" cy="3" r="1.4"/><circle cx="7" cy="3" r="1.4"/>` +
+            `<circle cx="3" cy="7" r="1.4"/><circle cx="7" cy="7" r="1.4"/>` +
+            `<circle cx="3" cy="11" r="1.4"/><circle cx="7" cy="11" r="1.4"/>` +
+          `</svg>` +
+        `</div>` +
         `<input type="checkbox" class="attr-map-check" id="amc-${attr.attribute_id}" ${checked ? 'checked' : ''} />` +
         `<label class="attr-map-label" for="amc-${attr.attribute_id}">` +
           `<span class="attr-map-name">${esc(attr.attribute_name)}</span>` +
@@ -1436,6 +1515,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           `<button class="attr-map-btn" title="Move up" onclick="moveAttrRow(this,-1)">▲</button>` +
           `<button class="attr-map-btn" title="Move down" onclick="moveAttrRow(this,1)">▼</button>` +
         `</div>`;
+      addDragBehavior(row);
       list.appendChild(row);
     });
     updateMoveButtons();

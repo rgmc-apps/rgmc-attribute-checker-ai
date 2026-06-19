@@ -2,138 +2,126 @@
 
 ## Goal
 
-Build and deploy a Flask web service (to Google Cloud Run) for RGMC Group that:
-1. Lets users upload clothing images and generate structured product attributes via GPT-4 Vision
-2. Manages **brands** and **per-brand GPT prompt templates** through a `/config` admin screen
-3. On the main page, users upload images, choose a brand (optional), and generate XLS/CSV/TXT output files
+A fully functional internal GPT Vision web tool for RGMC that converts clothing product photos into structured product descriptions. Users upload images, the tool sends them to OpenAI GPT-4V with a configurable prompt per brand, and returns formatted Excel/CSV/text files with product attributes. Deployed as a Flask service on Google Cloud Run with Supabase as the database backend.
 
-The brand/prompt config system uses **Supabase** (`https://eesrzpgmsrbhjeenfojq.supabase.co`) as its database backend.
+Acceptance criteria:
+- Main page 4-step workflow: Upload → Prompt → Attributes → Generate
+- Config page 4-section admin: Brands → Brand Prompts → Attributes → Brand Attribute Mapping
+- Brand-specific prompts loadable on main page
+- Brand-specific attribute sets loadable on main page
+- Output formats: .xlsx (with embedded thumbnails), .csv, .txt
+- All config data persisted in Supabase
 
 ---
 
 ## Current State
 
-**Code: COMPLETE and committed** — all changes are in commit `d34751b` ("added prompt mapping").
+**The app code is complete.** All Flask routes, both HTML templates, and all CSS/JS are implemented. The app cannot be fully used until the Supabase database tables are created.
 
-**Blocker: Database tables do not exist yet.** The `brands` and `brand_prompts` tables have NOT been created in the Supabase project. The app will throw this error when `/config` loads:
+**CRITICAL BLOCKER: Supabase DB tables do not exist yet.**
+- `brands` table — does not exist
+- `brand_prompts` table — does not exist
+- `attributes` table — does not exist
+- `brand_attributes` table — does not exist
 
-```
-{'message': "Could not find the table 'public.brands' in the schema cache", 'code': 'PGRST205'}
-```
+Every API call from the Config page will return a 500 error until the migrations are run. The main page works with default prompt and default attributes (no Supabase call needed for those), but brand prompt loading and brand attribute loading will fail silently.
 
-Everything else is ready:
-- Flask routes are wired (`/config`, `/api/brands`, `/api/brands/<id>`, `/api/brands/<id>/prompts`, `/api/prompts/<id>/activate`, `/api/prompts/<id>`)
-- `supabase>=2.0.0` is in `requirements.txt`
-- `SUPABASE_KEY` env var is expected at runtime (service role key)
-- The config UI (`/config`) is fully built
-
-**The ONLY remaining task is running the SQL migration in the Supabase dashboard.**
+**What is working locally:**
+- All Flask Python routes (`main.py`) are complete
+- `templates/index.html` — fully implemented with all features and onboarding UI
+- `templates/config.html` — fully implemented with all features and onboarding UI
+- `helper/attribute_generator.py` — existing GPT processor (not changed this session)
+- Git is clean, working tree matches latest commit
 
 ---
 
 ## Files Actively Being Edited
 
-All files below were changed in this session and are **already committed** to `master` (commit `d34751b`):
+- `templates/index.html` — All changes committed. Contains:
+  - How-it-works first-run banner (`#hiw-banner`, localStorage key `rgmc-hiw-seen`)
+  - Hint tooltips (`?` buttons) on "Prompt source" and "Attribute source" toggles
+  - Format cards redesigned from 3-column equal grid to stacked horizontal cards (icon-left, content-center, checkbox-right)
+  - Step number circles 30px with orange drop shadow
+  - Stagger entrance animation (`@keyframes fadeSlideUp` + `--si` CSS custom property set by JS)
+  - Section `focus-within` orange border highlight when a field inside is active
+  - Process button shine sweep animation (`@keyframes btnShine` on `::after` pseudo)
 
-- `main.py` — Added Supabase lazy client (`_sb()` function, lines 24–44), `/config` route, and 8 REST API routes for brands/prompts CRUD (after the existing `/download` route, before `_run_job`)
-- `requirements.txt` — Added `supabase>=2.0.0` (line 6)
-- `templates/config.html` — **New file**. Full admin UI at `/config`: two sections — (1) Brands table with add/edit/delete form panel, (2) Brand Prompts with brand dropdown, prompt history cards (active/inactive badges, expand/collapse), and add-prompt form with "Set as active" checkbox
-- `templates/index.html` — Added a ⚙ Config link in the header (inline-styled `<a>` tag pointing to `/config`, before the GPT Vision badge)
-- `supabase/migrations/001_create_brands.sql` — **New file**. SQL migration to create `brands` and `brand_prompts` tables (not yet run in Supabase)
-- `.claude/settings.local.json` — Has a local diff (git tracks it modified) but the change is minor/cosmetic — added curl permission
+- `templates/config.html` — All changes committed. Contains:
+  - Setup guide first-run card (`#setup-guide`, localStorage key `rgmc-sg-seen`)
+  - Enhanced empty states for Brands, Attributes, and Prompts (icon + title + description + CTA buttons)
+  - CTA buttons in empty states are wired to trigger the add-form toggle buttons via `.click()`
+  - Step number circles 30px with orange drop shadow
+  - Same stagger entrance animation as index.html
+  - Section `focus-within` orange border highlight
+  - Primary button lift + tactile feedback on `:active`
+
+- `supabase/migrations/001_create_brands.sql` — **PENDING execution.** Creates `brands` and `brand_prompts` tables. Must be run first.
+
+- `supabase/migrations/002_create_attributes.sql` — **PENDING execution.** Creates `attributes` (with seeded defaults) and `brand_attributes` tables. References `brands` via FK so 001 must run first.
 
 ---
 
 ## Failed Attempts
 
-- **Supabase Management API (`POST api.supabase.com/v1/projects/.../database/query`)** — **Why it failed**: Returned HTTP 401. The Management API requires a Supabase Personal Access Token (PAT from supabase.com/dashboard/account/tokens), NOT the project's service_role JWT key.
+- **What was tried**: Running Supabase DDL via CLI — **Why it failed**: Supabase CLI not installed; Management API requires a Personal Access Token (not the service role key that's available); direct DB connection is firewalled. DDL must be run manually in the Supabase Dashboard SQL editor only.
 
-- **Supabase Supavisor pooler via psycopg2 (JWT as DB password)** — Tried `aws-0-{region}.pooler.supabase.com:6543` with user `postgres.eesrzpgmsrbhjeenfojq` and the service_role JWT as password, across 5 AWS regions (ap-southeast-1, us-east-1, us-west-1, eu-west-1, ap-northeast-1). — **Why it failed**: Error `FATAL: (ENOTFOUND) tenant/user postgres.eesrzpgmsrbhjeenfojq not found` — the project is not on the new Supavisor pooler infrastructure.
-
-- **Direct psycopg2 to `db.eesrzpgmsrbhjeenfojq.supabase.co:5432`** — **Why it failed**: DNS resolution failed (`getaddrinfo failed`). The direct DB host is either firewalled or not accessible from this machine without the DB password.
-
-- **PostgREST REST API for DDL** — **Why it failed**: PostgREST (`/rest/v1/`) only supports CRUD on tables and RPC calls to named functions. No DDL support. No RPC functions were found in the database's OpenAPI spec at all.
-
-- **`@supabase/mcp-server-supabase` npm package** — Installed successfully via npx. — **Why it failed**: The package reads `--access-token` or `SUPABASE_ACCESS_TOKEN` env var. This must be a Supabase **account-level Personal Access Token**, not the project service_role key. The Supabase MCP is also not configured in the user's Claude settings (`C:\Users\erarellano\.claude\settings.json`), so it doesn't appear as an MCP tool in Claude Code sessions.
-
-- **Supabase CLI** — **Why it failed**: Not installed on this machine (`supabase --version` returns not found).
+- **What was tried**: Using `python` to run the dev server — **Why it failed**: On this Windows machine Python is only available as `py` (Windows Python Launcher). `python` is not on PATH.
 
 ---
 
 ## Next Step
 
-**Run the SQL migration in the Supabase Dashboard. This unblocks everything.**
+**Run the two SQL migrations in Supabase Dashboard.**
 
-1. Open: **https://supabase.com/dashboard/project/eesrzpgmsrbhjeenfojq/sql/new**
-
-2. Paste and run:
-
-```sql
-CREATE TABLE IF NOT EXISTS public.brands (
-    brand_id  BIGSERIAL PRIMARY KEY,
-    brand_code VARCHAR(50)  NOT NULL UNIQUE,
-    brand_name VARCHAR(200) NOT NULL,
-    brand_desc TEXT
-);
-
-CREATE TABLE IF NOT EXISTS public.brand_prompts (
-    id           BIGSERIAL PRIMARY KEY,
-    brand_id     BIGINT      NOT NULL REFERENCES public.brands(brand_id) ON DELETE CASCADE,
-    brand_prompt TEXT        NOT NULL,
-    is_active    BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE UNIQUE INDEX IF NOT EXISTS brand_prompts_single_active_idx
-    ON public.brand_prompts(brand_id)
-    WHERE is_active = TRUE;
-```
-
-3. After running SQL, set `SUPABASE_KEY` env var (Cloud Run config or local `.env`):
-   ```
-   SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlc3J6cGdtc3JiaGplZW5mb2pxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTY3MDgyMiwiZXhwIjoyMDk1MjQ2ODIyfQ.dhFkhsJQh74TOY-s5ga7yaG34BRt9SbzQG4m9ivHwmY
-   ```
-
-4. Install Python dependency locally if not done yet: `pip install supabase`
-
-5. Run the app (`python main.py` or via gunicorn) and navigate to `/config` — it should load the Brands section with an empty table and work end-to-end.
-
-**Optional follow-up after tables exist:**
-- Add Supabase MCP to Claude settings for future sessions (see Context section below)
-- Wire the active brand prompt into the main `/` page: when a brand is selected, pre-populate the prompt template textarea with that brand's active `brand_prompt`
+1. Go to: `https://supabase.com/dashboard/project/eesrzpgmsrbhjeenfojq/sql/new`
+2. Paste and run the full contents of `supabase/migrations/001_create_brands.sql` first.
+3. Then paste and run the full contents of `supabase/migrations/002_create_attributes.sql`.
+4. Verify in Supabase Table Editor that all four tables exist: `brands`, `brand_prompts`, `attributes`, `brand_attributes`.
+5. Set the `SUPABASE_KEY` env var, then run `py main.py` and test the Config page end-to-end (create a brand, add a prompt, set it active, create attributes, map them to the brand). Then test the main page (select Brand Prompt source, select the brand, verify prompt loads; switch Attribute source to Brand, verify attributes load).
 
 ---
 
 ## Context & Gotchas
 
-**Supabase credentials:**
-- Project URL: `https://eesrzpgmsrbhjeenfojq.supabase.co`
-- Service role key (already hardcoded as fallback in `main.py` line 29, but `SUPABASE_KEY` env var overrides it):
-  `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVlc3J6cGdtc3JiaGplZW5mb2pxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTY3MDgyMiwiZXhwIjoyMDk1MjQ2ODIyfQ.dhFkhsJQh74TOY-s5ga7yaG34BRt9SbzQG4m9ivHwmY`
+**Environment:**
+- Python command: `py` (Windows Launcher), not `python`
+- Dev server: `py main.py` starts on port 8080 by default
+- `SUPABASE_KEY` must be set as an environment variable (service role JWT). Never hardcoded.
+- `SUPABASE_URL` is hardcoded in `main.py` line 29: `'https://eesrzpgmsrbhjeenfojq.supabase.co'`
+- OpenAI API key: `API_KEY` env var, read inside `helper/attribute_generator.py`
 
-**The Supabase DB already has other tables** (systems, issues, companies, access_requests, bot_subscriptions, dev_activity_logs, etc.) — this is a shared Supabase project used for other RGMC internal tools. The `brands` and `brand_prompts` tables are new additions for this project specifically.
+**Supabase schema notes:**
+- `brands.brand_id` — BIGSERIAL PK
+- `brand_prompts` — enforces one active prompt per brand via partial unique index on `(brand_id) WHERE is_active = TRUE`
+- `brand_attributes` — junction table with `sort_order INT` for ordering attributes per brand
+- `attributes.attribute_name` — UNIQUE constraint; table is seeded with 6 defaults (Material, Style, Fit, Details, Sleeves, Design) via the migration
 
-**Unique index constraint on `brand_prompts`**: `CREATE UNIQUE INDEX ... WHERE is_active = TRUE` enforces only one active prompt per brand. The Flask code handles this correctly by deactivating all prompts before inserting/activating a new one (see `api_brand_prompts_create` and `api_prompt_activate` in `main.py`).
+**Main page JS architecture:**
+- `DEFAULT_PROMPT` — captured once at load from Jinja-rendered textarea value; restored when switching back to "Default" source
+- `DEFAULT_ATTRS` — injected via Jinja from `main.py DEFAULT_ATTRIBUTES` constant
+- `brandsLoaded` flag — prevents redundant `/api/brands` fetches on repeated radio toggles
+- Brand dropdown uses the `makeSearchableSelect` component wrapping `#brand-ss`
+- When brand prompt source = "Brand", selecting a brand fires `loadBrandPrompt(brandId)` — if also attr source = "Brand", also fires `loadBrandAttributes(brandId)`
 
-**Supabase client is lazy-initialized**: `_sb()` function in `main.py` (lines 32–44) creates the client on first API call, not at startup. This means missing `SUPABASE_KEY` won't crash the app on boot — it will return a 500 error only when `/config` or `/api/brands` etc. are first called.
+**Config page JS architecture:**
+- Three SS instances: `configBrandSS` (section 2, prompt management), `mapBrandSS` (section 4, attribute mapping)
+- Both are updated together in `renderBrandDropdown()` after `loadBrands()` resolves
+- `show(id)` / `hide(id)` helpers set `style.display = ''` / `'none'` — `.empty-state` CSS provides `display:flex` as the shown state
+- CTA buttons: `#brands-empty-cta` triggers `#toggle-brand-form-btn`, `#attrs-empty-cta` triggers `#toggle-attr-form-btn`
 
-**Python launcher**: On this Windows machine, Python is invoked via `py` (the Python Launcher), not `python` or `python3`. The `py` binary is at `C:\Users\erarellano\AppData\Local\Programs\Python\Launcher\py.exe`. Node.js v22 is available at standard PATH.
+**Onboarding localStorage keys:**
+- `rgmc-hiw-seen` — dismisses how-it-works banner on main page (set on "Got it" click)
+- `rgmc-sg-seen` — dismisses setup guide on config page (set on "Got it" click)
+- To re-test onboarding: open DevTools → Application → Local Storage → delete these keys
 
-**Setting up Supabase MCP for future sessions** (so Claude can do DDL without manual SQL execution):
-1. Get a Personal Access Token from https://supabase.com/dashboard/account/tokens
-2. Add to `C:\Users\erarellano\.claude\settings.json`:
-```json
-"mcpServers": {
-  "supabase": {
-    "command": "npx",
-    "args": [
-      "-y", "@supabase/mcp-server-supabase@latest",
-      "--project-ref", "eesrzpgmsrbhjeenfojq",
-      "--access-token", "YOUR_PAT_HERE"
-    ]
-  }
-}
-```
-3. Restart Claude Code to load the MCP tools.
+**Format cards structural change:**
+- `.format-check` is now the last child of `.format-card-inner` (order: icon → .format-card-content → check)
+- No longer `position: absolute`; part of flex row
+- Checked state CSS still works: `input:checked ~ .format-card-inner .format-check`
 
-**Tech stack** (for reference): Flask, XlsxWriter, Pillow, Gunicorn, supabase-py, requests — deployed to Google Cloud Run. Environment vars: `API_KEY` (OpenAI), `GPT_VERSION`, `GPT_LIMIT`, `SCRIPT_VERSION`, `SUPABASE_KEY`, `SUPABASE_URL`.
+**Cloud Run deployment env vars:**
+- `SUPABASE_KEY` — Supabase service role JWT
+- `API_KEY` — OpenAI API key
+- `GPT_VERSION` — e.g. `gpt-4.1` (default in main.py)
+- `SCRIPT_VERSION` — e.g. `2` (shown as a badge, default in main.py)
+- `PORT` — Cloud Run sets this automatically; main.py reads it with default 8080

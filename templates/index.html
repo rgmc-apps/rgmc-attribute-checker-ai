@@ -677,6 +677,86 @@
     }
 
     /* ════════════════════════════════
+       DROP ZONE RADIAL PULSE
+    ════════════════════════════════ */
+    #drop-zone { position: relative; overflow: hidden; }
+    #drop-zone .dz-pulse {
+      position: absolute; inset: 0; border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(circle at var(--px,50%) var(--py,50%),
+        rgba(212,112,10,.18) 0%, transparent 65%);
+      opacity: 0; transition: opacity .28s;
+    }
+    #drop-zone.dragover .dz-pulse { opacity: 1; }
+
+    /* ════════════════════════════════
+       FILE ITEM ANIMATIONS
+    ════════════════════════════════ */
+    .file-item.is-new {
+      animation: fileIn .38s cubic-bezier(0.34,1.56,0.64,1) both;
+      animation-delay: calc(var(--fi,0) * 28ms);
+    }
+    .file-item.is-exiting {
+      animation: fileOut .2s cubic-bezier(0.4,0,1,1) forwards;
+      pointer-events: none;
+    }
+    @keyframes fileIn {
+      from { opacity: 0; transform: scale(0.9) translateY(-6px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes fileOut {
+      to { opacity: 0; transform: scale(0.9) translateY(-4px); }
+    }
+
+    /* ════════════════════════════════
+       ATTR ROW ANIMATION
+    ════════════════════════════════ */
+    @keyframes attrRowIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    tr.attr-row-entering {
+      animation: attrRowIn .36s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* ════════════════════════════════
+       PROCESS BUTTON READOUT
+    ════════════════════════════════ */
+    #btn-readout {
+      font-size: .72rem; font-weight: 400; letter-spacing: 0;
+      opacity: 0; max-width: 0; overflow: hidden; white-space: nowrap;
+      transition: opacity .22s, max-width .28s cubic-bezier(0.34,1.56,0.64,1);
+      display: inline-block; vertical-align: middle;
+    }
+    #btn-readout.visible { opacity: .8; max-width: 200px; margin-left: 6px; }
+
+    /* ════════════════════════════════
+       PROGRESS CURRENT FILE
+    ════════════════════════════════ */
+    #progress-current {
+      font-size: .74rem; color: var(--orange); font-weight: 500;
+      margin-top: 5px; min-height: 1.1em;
+      display: flex; align-items: center; gap: 6px;
+      overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    }
+    #progress-current-name {
+      transition: opacity .18s, transform .18s cubic-bezier(0.4,0,1,1);
+      display: inline-block;
+    }
+    #progress-current-name.fading { opacity: 0; transform: translateY(4px); }
+
+    /* ════════════════════════════════
+       RESULT CARD ENTRANCE
+    ════════════════════════════════ */
+    @keyframes resultIn {
+      from { opacity: 0; transform: scale(0.97); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    #result-card.is-entering {
+      animation: resultIn .42s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    /* ════════════════════════════════
        RESPONSIVE
     ════════════════════════════════ */
     @media (max-width: 640px) {
@@ -765,6 +845,17 @@
       .hint-tip { left: auto; right: 0; top: calc(100% + 6px); transform: none; width: 200px; }
       .hint-tip::before { display: none; }
     }
+
+    @media (prefers-reduced-motion: reduce) {
+      .file-item.is-new, .file-item.is-exiting,
+      tr.attr-row-entering, #result-card.is-entering,
+      .page > .section, .page > #process-btn {
+        animation: none !important;
+        transition: none !important;
+      }
+      #btn-readout { transition: none !important; }
+      #progress-current-name { transition: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -851,6 +942,7 @@
     <div class="section-body">
 
       <div id="drop-zone" role="button" aria-label="Upload images or folders">
+        <div class="dz-pulse"></div>
         <div class="upload-icon">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path d="M12 15V3m0 0L8 7m4-4 4 4"/>
@@ -1109,7 +1201,7 @@
   <!-- Process -->
   <button id="process-btn" type="button">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    Generate Attributes
+    Generate Attributes<span id="btn-readout"></span>
   </button>
 
   <!-- Progress -->
@@ -1121,6 +1213,10 @@
       </div>
       <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
       <p id="progress-msg">Starting…</p>
+      <p id="progress-current" style="display:none;">
+        <svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="flex-shrink:0;stroke:var(--orange)"><polyline points="9 18 15 12 9 6"/></svg>
+        <span id="progress-current-name"></span>
+      </p>
     </div>
   </div>
 
@@ -1254,6 +1350,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   let files = [];
   let sortOrder = 'az';   // 'az' | 'za'
   let dupDismissed = false;
+  let renderedKeys = new Set();
 
   let currentJobId = null;
   let pollTimer    = null;
@@ -1601,13 +1698,19 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   }
 
   function renderFileList() {
-    const dupNames = new Set(findDuplicates().map(([n]) => n));
+    const dupNames   = new Set(findDuplicates().map(([n]) => n));
+    const currentKeys = new Set(files.map(f => f.file.name + '::' + f.file.size));
+    const newKeys     = new Set([...currentKeys].filter(k => !renderedKeys.has(k)));
 
     fileListEl.innerHTML = '';
     files.forEach((item, idx) => {
+      const key   = item.file.name + '::' + item.file.size;
+      const isNew = newKeys.has(key);
       const isDup = dupNames.has(item.file.name);
       const el    = document.createElement('div');
-      el.className = 'file-item' + (isDup ? ' is-dup' : '');
+      el.className = 'file-item' + (isDup ? ' is-dup' : '') + (isNew ? ' is-new' : '');
+      el.dataset.key = key;
+      if (isNew) el.style.setProperty('--fi', idx);
 
       const folderHtml = item.folder
         ? `<span class="file-folder"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escHtml(item.folder)}</span>`
@@ -1630,17 +1733,24 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
     fileListEl.querySelectorAll('.file-rm').forEach(btn =>
       btn.addEventListener('click', () => {
-        const i = +btn.dataset.idx;
-        URL.revokeObjectURL(files[i].url);
-        files.splice(i, 1);
-        dupDismissed = false;
-        refresh();
+        const i    = +btn.dataset.idx;
+        const item = files[i];
+        const el   = btn.closest('.file-item');
+        el.classList.add('is-exiting');
+        el.addEventListener('animationend', () => {
+          const ci = files.indexOf(item);
+          if (ci !== -1) { URL.revokeObjectURL(item.url); files.splice(ci, 1); }
+          dupDismissed = false;
+          refresh();
+        }, { once: true });
       })
     );
 
+    renderedKeys = currentKeys;
     const n = files.length;
     fileCountEl.innerHTML = `<b>${n}</b> <span>image${n !== 1 ? 's' : ''} selected</span>`;
     fileListWrap.style.display = n > 0 ? 'block' : 'none';
+    updateProcessBtn();
   }
 
   // ── Event wiring ──────────────────────────────────────
@@ -1650,7 +1760,13 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   fileInput.addEventListener('change',   e => { addFromInput(e.target.files, false); fileInput.value = ''; });
   folderInput.addEventListener('change', e => { addFromInput(e.target.files, true);  folderInput.value = ''; });
 
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+    const r = dropZone.getBoundingClientRect();
+    dropZone.style.setProperty('--px', ((e.clientX - r.left) / r.width * 100) + '%');
+    dropZone.style.setProperty('--py', ((e.clientY - r.top) / r.height * 100) + '%');
+  });
   dropZone.addEventListener('dragleave', e => { if (!dropZone.contains(e.relatedTarget)) dropZone.classList.remove('dragover'); });
   dropZone.addEventListener('drop', async e => {
     e.preventDefault();
@@ -1664,16 +1780,23 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
   // ── Attributes ────────────────────────────────────────
 
-  function addAttrRow(name = '', desc = '') {
+  function addAttrRow(name, desc, animate) {
+    name = name || ''; desc = desc || '';
     const tr = document.createElement('tr');
+    if (animate) tr.classList.add('attr-row-entering');
     tr.innerHTML = `
       <td><input type="text" placeholder="e.g. Color" value="${escHtml(name)}" /></td>
       <td><input type="text" placeholder="e.g. Main visible color of the garment" value="${escHtml(desc)}" /></td>
       <td class="td-rm"><button class="rm-attr" title="Remove">✕</button></td>`;
-    tr.querySelector('.rm-attr').addEventListener('click', () => tr.remove());
+    tr.querySelector('.rm-attr').addEventListener('click', () => {
+      tr.style.transition = 'opacity .18s, transform .18s';
+      tr.style.opacity = '0';
+      tr.style.transform = 'translateX(-8px) scale(0.97)';
+      tr.addEventListener('transitionend', () => tr.remove(), { once: true });
+    });
     attrTbody.appendChild(tr);
   }
-  addAttrBtn.addEventListener('click', () => addAttrRow());
+  addAttrBtn.addEventListener('click', () => addAttrRow('', '', true));
 
   function getAttributes() {
     return Array.from(attrTbody.querySelectorAll('tr')).map(tr => {
@@ -1685,6 +1808,26 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   function getOutputFormats() {
     return Array.from(document.querySelectorAll('input[name="fmt"]:checked')).map(cb => cb.value);
   }
+
+  // ── Process button live readout ───────────────────────
+
+  function updateProcessBtn() {
+    const n      = files.length;
+    const fmts   = getOutputFormats();
+    const readout = document.getElementById('btn-readout');
+    if (!readout) return;
+    if (n > 0) {
+      const fmtStr = fmts.length ? ' · ' + fmts.map(f => f.toUpperCase()).join(', ') : '';
+      readout.textContent = ' · ' + n + ' image' + (n !== 1 ? 's' : '') + fmtStr;
+      readout.classList.add('visible');
+    } else {
+      readout.classList.remove('visible');
+    }
+  }
+
+  document.querySelectorAll('input[name="fmt"]').forEach(cb =>
+    cb.addEventListener('change', updateProcessBtn)
+  );
 
   // ── Process ───────────────────────────────────────────
 
@@ -1720,7 +1863,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     fetch('/status/' + currentJobId)
       .then(r => r.json())
       .then(data => {
-        showProgress(data.progress, data.total, data.message);
+        showProgress(data.progress, data.total, data.message, data.current_file);
         if (data.status === 'done')       { clearTimeout(pollTimer); showResult(currentJobId, data.message); processBtn.disabled = false; }
         else if (data.status === 'error') { clearTimeout(pollTimer); showError(data.message);                processBtn.disabled = false; }
         else pollTimer = setTimeout(pollStatus, 2000);
@@ -1735,13 +1878,22 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     clearTimeout(pollTimer);
   }
 
-  function showProgress(current, total, msg) {
+  function showProgress(current, total, msg, currentFile) {
     progressCard.style.display = 'block';
     errorCard.style.display = resultCard.style.display = 'none';
     const pct = total > 0 ? Math.round((current / total) * 100) : 0;
     progressFill.style.width = pct + '%';
     progressPct.textContent  = pct + '%';
     progressMsg.textContent  = msg;
+    const cur     = document.getElementById('progress-current');
+    const curName = document.getElementById('progress-current-name');
+    if (cur && curName && currentFile) {
+      cur.style.display = 'flex';
+      curName.classList.add('fading');
+      setTimeout(() => { curName.textContent = currentFile; curName.classList.remove('fading'); }, 180);
+    } else if (cur) {
+      cur.style.display = 'none';
+    }
   }
 
   function showError(msg) {
@@ -1752,6 +1904,8 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
   function showResult(jobId, msg) {
     resultCard.style.display = 'block';
+    resultCard.classList.add('is-entering');
+    resultCard.addEventListener('animationend', () => resultCard.classList.remove('is-entering'), { once: true });
     progressCard.style.display = 'none';
     downloadBtn.href = '/download/' + jobId;
     resultMsg.textContent = msg;

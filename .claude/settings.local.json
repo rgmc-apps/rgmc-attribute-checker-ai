@@ -34,7 +34,15 @@
       "PowerShell($env:SUPABASE_URL; $env:SUPABASE_KEY; $env:DATABASE_URL; $env:SUPABASE_DB_URL; $env:POSTGRES_URL)",
       "PowerShell(npx -y @supabase/mcp-server-supabase@latest --help 2>&1 | Select-Object -First 20)",
       "Bash(python *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(echo.)",
+      "PowerShell(New-Item *)",
+      "PowerShell(python3 main.py 2>&1 &)",
+      "PowerShell(Receive-Job *)",
+      "Bash(py -3 main.py)",
+      "Read(//tmp/**)",
+      "WebFetch(domain:localhost)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }
