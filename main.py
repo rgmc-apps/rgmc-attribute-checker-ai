@@ -5,6 +5,7 @@ import threading
 import uuid
 import tempfile
 
+import requests
 from flask import Flask, jsonify, render_template, request, send_file
 
 from helper.attribute_generator import AttributeGenerator
@@ -44,38 +45,197 @@ def _sb():
     return _sb_instance
 
 
+# ---------------------------------------------------------------------------
+# Creatives DB lookup (via rgmc-gcp-api, backed by creative_prod)
+# ---------------------------------------------------------------------------
+
+CREATIVE_API_BASE_URL = os.environ.get(
+    'CREATIVE_API_BASE_URL', 'https://rgmc-gcp-api-935246372408.asia-southeast1.run.app'
+).rstrip('/')
+
+
+class CreativeApiError(Exception):
+    pass
+
+
+def _creative_lookup(table_name, where_column, where_value):
+    try:
+        resp = requests.get(
+            '{}/creative/by_table/value'.format(CREATIVE_API_BASE_URL),
+            params={'table_name': table_name, 'where_column': where_column, 'where_value': where_value},
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        raise CreativeApiError('Could not reach the creatives database: {}'.format(exc))
+
+    if resp.status_code != 200:
+        detail = resp.text
+        try:
+            detail = resp.json().get('detail', detail)
+        except ValueError:
+            pass
+        raise CreativeApiError('Creatives database error ({}): {}'.format(resp.status_code, detail))
+
+    return resp.json().get('data', [])
+
+
+def _creative_lookup_name(table_name, pk_column, pk_value, name_column='name'):
+    if pk_value in (None, ''):
+        return None
+    try:
+        rows = _creative_lookup(table_name, pk_column, pk_value)
+    except CreativeApiError:
+        logger.warning('Creative lookup failed for %s.%s=%s', table_name, pk_column, pk_value, exc_info=True)
+        return None
+    return rows[0].get(name_column) if rows else None
+
+
 JOBS: dict = {}
 
 PROMPT_INSTRUCTION = (
-    'Make me a product description of the attached photo. '
-    'Follow the format below for the result. Remove Bold formatting.'
+    'Generate a complete e-commerce product listing for the attached photo(s) by following the '
+    'structure, rules, and required inputs below exactly. Do not invent brand names, measurements, '
+    'materials, or care instructions that are not supported by the photos or the information provided.'
 )
 
-PROMPT_TEMPLATE_DEFAULT = '''"[Product Title in all caps. Add brand name if visible in photo. Also add a random female first name. Product Name should include what type of Dress (E.g. A-Line Dress, Sheath Dress, Collared Top)]
+PROMPT_TEMPLATE_DEFAULT = """## 1. Product Title
+Generate an SEO-optimized product title using the following format:
 
-[Descriptive Paragraph]
+BRAND + FEMININE STYLE NAME + KEY SILHOUETTE + KEY DESIGN DETAIL
 
-A 2-3 sentence paragraph describing the item with key benefits woven in naturally. Talk about versatility, fit, material, and suggested use.
+Requirements:
+- Write the product title in ALL CAPS.
+- Include the brand name only if it is visible in the provided photos or supplied as {{BRAND_NAME}} below.
+- Generate a unique, random feminine first name as the style name. Avoid repeating the same name across different products.
+- Identify the correct garment type (for example A-LINE DRESS, SHEATH DRESS, COLLARED TOP), using the supplied Product Category when available.
+- Include relevant silhouette and design details that improve searchability.
+- The title must be at least 30 characters long.
+- Use relevant SEO keywords naturally, without keyword stuffing.
+- Do not invent a brand name or features that are not supported by the photos or the inputs below.
 
-✅ Why You\'ll Love It [Items should be one short sentence only]
+## 2. Short Product Introduction
+Write a concise introduction based on the Description Type supplied below.
+
+For PD — Feminine Style:
+- Write 1-2 sentences.
+- Use a feminine, refined tone.
+- Convey the garment's silhouette, structure, and natural movement.
+- Highlight its defining characteristic without excessive adjectives.
+
+For AE — Structured and Polished Style:
+- Write exactly 1 sentence.
+- Emphasize clean lines, tailored details, and the garment's overall structure.
+- Maintain a polished, professional tone.
+
+General requirements:
+- Keep the introduction concise and easy to scan.
+- Mention the material only when it matches the supplied Material Composition.
+- Avoid storytelling, generic occasion recommendations, and repetitive design descriptions.
+- Do not invent details that cannot be verified from the photos or the supplied inputs.
+
+## 3. Product Details
+Present the product details as concise bullet points, one short sentence each. Label every bullet with the exact attribute name followed by a colon (for example "Silhouette & Length: ..."). Prioritize the following attributes, in this order:
 
 {{ATTRIBUTES}}
 
-📌 Sizing & Color Notice
+Then add two more bullets using the exact supplied values below — phrase them as a clean sentence, but do not change the facts:
+- Material: {{MATERIAL}}
+- Care Instructions: {{CARE_INSTRUCTIONS}}
 
-Color may appear slightly different due to lighting or screen settings. For best fit, please refer to our size chart in the product photos.
+Also factor in this additional product information, when supplied: {{ADDITIONAL_INFO}}
 
-Need help? Message us about size help, returns, or product info."
+Requirements:
+- Keep each bullet to one short, informative sentence.
+- Focus on useful purchasing information rather than decorative language.
+- Avoid repeating information already covered in the introduction.
+- Do not assume a feature exists simply because it is common for that garment type.
+- Omit an attribute bullet entirely if it is not visible or not supported by the photos.
 
-Tags: [Possible tags that can be used in the product in list form]'''
+## 4. Fit & Sizing Notes
+Use this standard notice exactly, with no changes:
+
+"Please refer to the size chart in the product photos for the best fit."
+
+Do not invent measurements or recommend a specific size.
+
+## 5. Care Instructions
+Restate the supplied Care / Wash Instructions ({{CARE_INSTRUCTIONS}}) as a short, standardized sentence. Do not assume the fabric's care requirements based on appearance alone, and do not add washing instructions that were not supplied.
+
+## 6. Customer Support
+End with this standard line exactly, with no changes:
+
+"Need help with sizing or product details? Message us — we're happy to help."
+
+## 7. Product Tags
+Generate a list of relevant product tags for marketplace search and categorization, based on garment type, silhouette and cut, neckline and sleeve style, length and fit, distinctive design features, material or fabric type, and style category.
+
+Requirements:
+- Present tags as a list.
+- Use concise, searchable keywords.
+- Avoid duplicate, irrelevant, or unsupported tags.
+- Do not include colors as tags — color is already selectable as a separate product option.
+
+## 8. Supplied Inputs For This Product
+Use the following information exactly as given. Where a value is "(not provided)", rely only on what is clearly visible in the photos, or omit that detail rather than inventing it.
+
+- Brand Name: {{BRAND_NAME}}
+- Product Category: {{PRODUCT_CATEGORY}}
+- Description Type: {{DESCRIPTION_TYPE}}
+- Material Composition: {{MATERIAL}}
+- Care / Wash Instructions: {{CARE_INSTRUCTIONS}}
+- Additional Product Information: {{ADDITIONAL_INFO}}
+- Product Photos: all attached photos show the same item from different angles. Analyze every angle to identify design details, construction, silhouette, closures, and functional features before writing the description.
+
+If required information is missing, rely only on what is clearly supported by the photos rather than fabricating details.
+
+## 9. Final Output Format
+Generate the product listing in exactly this order, with no extra sections:
+
+**PRODUCT TITLE**
+
+[SEO-optimized title in ALL CAPS, at least 30 characters]
+
+**SHORT INTRODUCTION**
+
+[1-2 sentences for PD, or exactly 1 sentence for AE]
+
+**PRODUCT DETAILS**
+- [One labeled bullet per attribute listed in section 3]
+- Material: [restated from the supplied Material Composition]
+- Care Instructions: [restated from the supplied Care / Wash Instructions]
+
+**FIT & SIZING**
+
+Please refer to the size chart in the product photos for the best fit.
+
+**CUSTOMER SUPPORT**
+
+Need help with sizing or product details? Message us — we're happy to help.
+
+**PRODUCT TAGS**
+- [Relevant tag]
+- [Relevant tag]
+- [Relevant tag]
+
+## 10. Final Quality Checklist
+Before returning the result, verify that:
+- The title is in ALL CAPS, at least 30 characters, and uses relevant SEO keywords.
+- The style name is feminine, varied, and appropriate for the garment.
+- The introduction follows the sentence count for the supplied Description Type.
+- The description is concise, polished, and easy to scan.
+- Product details are factual, practical, non-repetitive, and each bullet is labeled with its attribute name.
+- The Material and Care Instructions bullets match the supplied values.
+- All attached photos have been considered.
+- No unsupported features, measurements, materials, or care instructions have been invented.
+- Tags are relevant, concise, and non-duplicative.
+- The output excludes any "Why You'll Love It" section, color lists, and generic occasion-based phrases."""
 
 DEFAULT_ATTRIBUTES = [
-    {'name': 'Material', 'description': 'Actual material made, Feel, weight, breathability, structure'},
-    {'name': 'Style',    'description': 'Occasion-fit or lifestyle relevance'},
-    {'name': 'Fit',      'description': 'Body feel, cinch, looseness'},
-    {'name': 'Details',  'description': 'Standout design features'},
-    {'name': 'Sleeves',  'description': 'Length and weather-appropriateness'},
-    {'name': 'Design',   'description': 'Observable colors and Print if visible'},
+    {'name': 'Silhouette & Length', 'description': 'Garment shape, cut, and length — e.g. A-line, fitted, relaxed, mini, midi, or maxi.'},
+    {'name': 'Design Details',      'description': 'Distinctive features such as collars, necklines, sleeves, pleats, ruffles, seams, darts, or paneling.'},
+    {'name': 'Closure',             'description': 'Type and placement of closures — e.g. zippers, buttons, hooks, or pull-on construction.'},
+    {'name': 'Stretch & Fit',       'description': 'Whether the garment is stretchy or non-stretch, along with relevant fit characteristics.'},
+    {'name': 'Functional Features', 'description': 'Pockets, lining, adjustable straps, removable belts, or included accessories, when applicable.'},
 ]
 
 
@@ -114,22 +274,37 @@ def process():
     if not output_formats:
         return jsonify({'error': 'Select at least one output format.'}), 400
 
+    material          = request.form.get('material', '').strip()
+    care_instructions = request.form.get('care_instructions', '').strip()
+
+    if not material:
+        return jsonify({'error': 'Material Composition is required.'}), 400
+    if not care_instructions:
+        return jsonify({'error': 'Care / Wash Instructions is required.'}), 400
+
     settings = {
-        'attributes':        attributes,
-        'prompt_template':   request.form.get('prompt_template', PROMPT_TEMPLATE_DEFAULT),
+        'attributes':         attributes,
+        'prompt_template':    request.form.get('prompt_template', PROMPT_TEMPLATE_DEFAULT),
         'prompt_instruction': PROMPT_INSTRUCTION,
-        'output_formats':    output_formats,
+        'output_formats':     output_formats,
+        'brand_name':         request.form.get('brand_name', '').strip(),
+        'product_category':   request.form.get('product_category', '').strip(),
+        'description_type':   request.form.get('description_type', 'PD').strip(),
+        'material':           material,
+        'care_instructions':  care_instructions,
+        'additional_info':    request.form.get('additional_info', '').strip(),
     }
 
     job_id     = str(uuid.uuid4())
     output_dir = tempfile.mkdtemp()
 
     JOBS[job_id] = {
-        'status':     'queued',
-        'progress':   0,
-        'total':      len(valid_files),
-        'message':    'Queued…',
-        'zip_path':   '',
+        'status':       'queued',
+        'progress':     0,
+        'total':        len(valid_files),
+        'message':      'Queued…',
+        'current_file': '',
+        'zip_path':     '',
     }
 
     t = threading.Thread(
@@ -148,10 +323,11 @@ def job_status(job_id):
     if not job:
         return jsonify({'error': 'Job not found.'}), 404
     return jsonify({
-        'status':   job['status'],
-        'progress': job['progress'],
-        'total':    job['total'],
-        'message':  job['message'],
+        'status':       job['status'],
+        'progress':     job['progress'],
+        'total':        job['total'],
+        'message':      job['message'],
+        'current_file': job.get('current_file', ''),
     })
 
 
@@ -417,6 +593,78 @@ def api_prompt_delete(prompt_id):
         return jsonify({'error': str(exc)}), 500
 
 
+@app.route('/api/creative/search')
+def api_creative_search():
+    # NOTE: creative_prod table names are PascalCase (ProductDesign, Brand, ...) but their
+    # column names are camelCase (stockNumber, brandId, ...) — confirmed against the live API.
+    stock_number = request.args.get('stock_number', '').strip()
+    if not stock_number:
+        return jsonify({'error': 'Stock number is required.'}), 400
+
+    try:
+        rows = _creative_lookup('ProductDesign', 'stockNumber', stock_number)
+    except CreativeApiError as exc:
+        logger.error('Creative search failed for stock number %s: %s', stock_number, exc)
+        return jsonify({'error': str(exc)}), 502
+
+    if not rows:
+        return jsonify({'error': 'No product found for stock number "{}".'.format(stock_number)}), 404
+
+    # If more than one design shares the stock number, show the most recently created one.
+    row = max(rows, key=lambda r: r.get('productDesignId') or 0)
+    product_design_id = row.get('productDesignId')
+    design_status_code = row.get('designStatusCode')
+
+    season_name, season_year = None, None
+    season_id = row.get('seasonId')
+    if season_id not in (None, ''):
+        season_rows = []
+        try:
+            season_rows = _creative_lookup('Season', 'seasonId', season_id)
+        except CreativeApiError:
+            logger.warning('Season lookup failed for seasonId=%s', season_id, exc_info=True)
+        if season_rows:
+            season_name = season_rows[0].get('name')
+            season_year = season_rows[0].get('year')
+
+    images = []
+    try:
+        pic_rows = _creative_lookup('ProductDesignPicture', 'productDesignId', product_design_id)
+        for p in pic_rows:
+            image_data = p.get('imageData')
+            if not image_data:
+                continue
+            images.append({
+                'id':          p.get('id'),
+                'data_uri':    'data:image/png;base64,{}'.format(image_data),
+                'remark':      p.get('remark') or '',
+                'create_date': p.get('createDate'),
+            })
+    except CreativeApiError:
+        logger.warning('Could not load pictures for productDesignId=%s', product_design_id, exc_info=True)
+
+    return jsonify({
+        'product_design_id':   product_design_id,
+        'stock_number':        row.get('stockNumber'),
+        'product_design_code': row.get('productDesignCode'),
+        'description':         row.get('description'),
+        'brand':               _creative_lookup_name('Brand', 'brandId', row.get('brandId')),
+        'category':            _creative_lookup_name('Category', 'categoryId', row.get('categoryId')),
+        'item_group':          _creative_lookup_name('ItemGroup', 'itemGroupId', row.get('itemGroupId')),
+        'designer':            _creative_lookup_name('Designer', 'designerId', row.get('designerId')),
+        'season':              season_name,
+        'year':                season_year,
+        'design_status':       _creative_lookup_name('DesignStatus', 'designStatusCode', design_status_code),
+        'design_status_code':  design_status_code,
+        'fabric_code':         row.get('fabricCode'),
+        'fabric_name':         row.get('fabricName'),
+        'supplier':            _creative_lookup_name('Supplier', 'supplierId', row.get('supplierId')),
+        'supplier_stock_no':   row.get('supplierStockNo'),
+        'remark':              row.get('remark'),
+        'images':              images,
+    })
+
+
 # ---------------------------------------------------------------------------
 # Background job
 # ---------------------------------------------------------------------------
@@ -425,17 +673,18 @@ def _run_job(job_id, file_data, settings, output_dir):
     try:
         JOBS[job_id]['status'] = 'processing'
 
-        def on_progress(idx, msg):
-            JOBS[job_id].update({'progress': idx, 'message': msg})
+        def on_progress(idx, msg, filename=''):
+            JOBS[job_id].update({'progress': idx, 'message': msg, 'current_file': filename})
 
         generator = AttributeGenerator(logger, file_data, settings, output_dir)
         result    = generator.process(progress_callback=on_progress)
 
         JOBS[job_id].update({
-            'status':   'done',
-            'progress': JOBS[job_id]['total'],
-            'message':  result.get('message', 'Done.'),
-            'zip_path': result.get('zip_path', ''),
+            'status':       'done',
+            'progress':     JOBS[job_id]['total'],
+            'message':      result.get('message', 'Done.'),
+            'current_file': '',
+            'zip_path':     result.get('zip_path', ''),
         })
     except Exception as exc:
         logger.error('Job %s failed: %s', job_id, exc, exc_info=True)

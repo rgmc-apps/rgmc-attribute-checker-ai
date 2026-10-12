@@ -42,7 +42,9 @@
       "Bash(py -3 main.py)",
       "Read(//tmp/**)",
       "WebFetch(domain:localhost)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(ls -la static/)",
+      "Bash(dir static/)"
     ]
   }
 }

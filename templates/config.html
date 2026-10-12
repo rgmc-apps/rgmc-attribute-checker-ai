@@ -705,7 +705,7 @@
           <h4>New Prompt</h4>
           <label class="field-label" for="f-prompt-text">Prompt Template</label>
           <textarea class="field-input" id="f-prompt-text" rows="12"
-            placeholder="Enter the full GPT prompt for this brand…&#10;&#10;You can use the same format as the main page prompt template, including {{ATTRIBUTES}} as a placeholder if needed."></textarea>
+            placeholder="{% raw %}Enter the full GPT prompt for this brand…&#10;&#10;Use the same format as the main page prompt template. Placeholders: {{ATTRIBUTES}}, {{BRAND_NAME}}, {{PRODUCT_CATEGORY}}, {{DESCRIPTION_TYPE}}, {{MATERIAL}}, {{CARE_INSTRUCTIONS}}, {{ADDITIONAL_INFO}}{% endraw %}"></textarea>
           <div class="prompt-footer">
             <label class="checkbox-label">
               <input type="checkbox" id="f-prompt-active" />

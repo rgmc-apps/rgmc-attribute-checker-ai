@@ -38,16 +38,35 @@ class AttributeGenerator:
         self.__prompt_instruction = settings.get('prompt_instruction', '')
         self.__output_formats = [f.lower() for f in settings.get('output_formats', ['xls'])]
 
+        self.__brand_name = settings.get('brand_name', '').strip()
+        self.__product_category = settings.get('product_category', '').strip()
+        self.__material = settings.get('material', '').strip()
+        self.__care_instructions = settings.get('care_instructions', '').strip()
+        self.__additional_info = settings.get('additional_info', '').strip()
+
+        desc_type = settings.get('description_type', 'PD').strip().upper()
+        self.__description_type_label = (
+            'AE (Structured and Polished Style)' if desc_type == 'AE'
+            else 'PD (Feminine Style)'
+        )
+
     # ------------------------------------------------------------------
     # Prompt
     # ------------------------------------------------------------------
 
     def __build_prompt(self):
         attr_lines = '\n'.join(
-            '{} - [{}]'.format(a['name'], a['description'])
+            '- {}: {}'.format(a['name'], a['description'])
             for a in self.__attributes
         )
-        template = self.__prompt_template.replace('{{ATTRIBUTES}}', attr_lines)
+        template = self.__prompt_template
+        template = template.replace('{{ATTRIBUTES}}', attr_lines)
+        template = template.replace('{{BRAND_NAME}}', self.__brand_name or '(not provided)')
+        template = template.replace('{{PRODUCT_CATEGORY}}', self.__product_category or '(not provided)')
+        template = template.replace('{{DESCRIPTION_TYPE}}', self.__description_type_label)
+        template = template.replace('{{MATERIAL}}', self.__material)
+        template = template.replace('{{CARE_INSTRUCTIONS}}', self.__care_instructions)
+        template = template.replace('{{ADDITIONAL_INFO}}', self.__additional_info or '(not provided)')
         return '{}\n\n{}'.format(self.__prompt_instruction, template)
 
     # ------------------------------------------------------------------
@@ -81,15 +100,29 @@ class AttributeGenerator:
     # Response parsing
     # ------------------------------------------------------------------
 
+    def __clean_line(self, line):
+        line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)       # strip markdown bold
+        line = re.sub(r'^[\-\*•]+\s*', '', line)            # strip leading bullet markers
+        return line.strip()
+
     def __parse_response(self, content):
-        lines = [l.strip() for l in content.strip().split('\n') if l.strip()]
+        raw_lines = [l.strip() for l in content.strip().split('\n') if l.strip()]
+        lines = [self.__clean_line(l) for l in raw_lines]
 
         product_title = ''
-        for line in lines:
-            clean = line.strip('"').strip()
-            if clean:
-                product_title = clean
+        for idx, line in enumerate(lines):
+            if re.match(r'^product title\s*:?\s*$', line, re.IGNORECASE):
+                for nxt in lines[idx + 1:]:
+                    if nxt:
+                        product_title = nxt.strip('"').strip()
+                        break
                 break
+        if not product_title:
+            for line in lines:
+                clean = line.strip('"').strip()
+                if clean:
+                    product_title = clean
+                    break
 
         attr_values = {}
         for attr in self.__attributes:
@@ -133,6 +166,10 @@ class AttributeGenerator:
     def process(self, progress_callback=None):
         if not self.__api_key:
             raise ValueError('API_KEY environment variable is not set.')
+        if not self.__material:
+            raise ValueError('Material Composition is required.')
+        if not self.__care_instructions:
+            raise ValueError('Care / Wash Instructions is required.')
 
         prompt = self.__build_prompt()
         do_xls = 'xls' in self.__output_formats
@@ -174,7 +211,7 @@ class AttributeGenerator:
 
         for idx, (filename, file_bytes) in enumerate(self.__file_data):
             if progress_callback:
-                progress_callback(idx, 'Processing {} ({}/{})...'.format(filename, idx + 1, len(self.__file_data)))
+                progress_callback(idx, 'Processing {} ({}/{})...'.format(filename, idx + 1, len(self.__file_data)), filename)
 
             # Rate limiting
             if entry_count > 0 and entry_count % self.__rpm_limit == 0:
@@ -262,7 +299,7 @@ class AttributeGenerator:
                     zf.write(fp, os.path.basename(fp))
 
         if progress_callback:
-            progress_callback(len(self.__file_data), 'Complete')
+            progress_callback(len(self.__file_data), 'Complete', '')
 
         processed = entry_count
         return {
