@@ -244,6 +244,14 @@
       white-space: nowrap;
     }
     .file-size { color: var(--muted); }
+    .group-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      background: var(--orange-lt); border: 1px solid rgba(212,112,10,.25);
+      color: var(--orange); border-radius: 4px;
+      padding: 1px 6px; font-size: .68rem; font-weight: 600;
+      max-width: 220px; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; flex-shrink: 0;
+    }
     .dup-badge {
       background: #FEF3C7; border: 1px solid var(--amber-bd);
       color: var(--amber); border-radius: 4px;
@@ -418,6 +426,10 @@
       border-radius: 4px; padding: 1px 5px; font-size: .72rem;
       color: var(--orange); font-family: monospace;
     }
+    .prompt-preview {
+      background: var(--border-lt); color: var(--ink-2); margin-top: 10px; cursor: default;
+    }
+    .prompt-preview:focus { box-shadow: none; border-color: var(--border); }
 
     /* ════════════════════════════════
        REQUIRED INPUTS
@@ -1292,11 +1304,11 @@
           </div>
         </div>
         <div>
-          <label class="field-label" for="req-material">Material Composition <span class="field-badge required">Required</span></label>
+          <label class="field-label" for="req-material">Material Composition <span class="field-badge optional">Optional</span></label>
           <input type="text" id="req-material" class="text-input" placeholder="e.g. 95% Cotton, 5% Spandex" autocomplete="off" />
         </div>
         <div>
-          <label class="field-label" for="req-care">Care / Wash Instructions <span class="field-badge required">Required</span></label>
+          <label class="field-label" for="req-care">Care / Wash Instructions <span class="field-badge optional">Optional</span></label>
           <input type="text" id="req-care" class="text-input" placeholder="e.g. Hand wash cold, line dry, do not bleach" autocomplete="off" />
         </div>
         <div class="req-field-wide">
@@ -1325,6 +1337,18 @@
       <p class="helper-text">
         Placeholders, replaced automatically when processing:
         {% raw %}<code>{{ATTRIBUTES}}</code> <code>{{BRAND_NAME}}</code> <code>{{PRODUCT_CATEGORY}}</code> <code>{{DESCRIPTION_TYPE}}</code> <code>{{MATERIAL}}</code> <code>{{CARE_INSTRUCTIONS}}</code> <code>{{ADDITIONAL_INFO}}</code>{% endraw %}
+      </p>
+
+      <div class="field-label-row" style="margin-top:14px;">
+        <label class="field-label" for="prompt-preview">Live Preview</label>
+        <button class="btn-text-sm" type="button" id="toggle-preview-btn">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span id="toggle-preview-label">Show preview</span>
+        </button>
+      </div>
+      <textarea id="prompt-preview" class="prompt-preview" rows="14" readonly tabindex="-1" style="display:none;"></textarea>
+      <p class="helper-text" id="prompt-preview-hint" style="display:none;">
+        Updates automatically as you edit attributes and required inputs — this is exactly what gets sent to GPT.
       </p>
     </div>
   </div>
@@ -1435,6 +1459,12 @@
           </div>
         </label>
       </div>
+
+      <label class="field-label" for="output-filename" style="margin-top:16px;">Output File Name <span class="field-badge optional">Optional</span></label>
+      <input type="text" id="output-filename" class="text-input" placeholder="e.g. paperdolls-batch-01 — defaults to attributes_<timestamp>" autocomplete="off" />
+      <p class="helper-text">
+        Names the Excel/CSV file and the downloaded zip. Individual text files are still named after each product's title.
+      </p>
     </div>
   </div>
 
@@ -1596,6 +1626,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   let pollTimer    = null;
 
   const DEFAULT_ATTRS = {{ default_attributes | safe }};
+  const PROMPT_INSTRUCTION = {{ prompt_instruction | tojson }};
 
   // ── DOM refs ───────────────────────────────────────────
   const dropZone       = document.getElementById('drop-zone');
@@ -1617,6 +1648,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   const attrTbody      = document.getElementById('attr-tbody');
   const addAttrBtn     = document.getElementById('add-attr-btn');
   const promptTA       = document.getElementById('prompt-template');
+  const outputFilename = document.getElementById('output-filename');
   const processBtn     = document.getElementById('process-btn');
   const progressCard   = document.getElementById('progress-card');
   const progressFill   = document.getElementById('progress-fill');
@@ -1678,6 +1710,13 @@ function makeSearchableSelect(wrapEl, placeholderText) {
 
   function escAttr(s) { return String(s == null ? '' : s).replace(/"/g, '&quot;'); }
 
+  function creativeGroupId(data) {
+    return (data && (data.stock_number || data.product_design_code)) || null;
+  }
+  function creativeGroupLabel(data) {
+    return (data && (data.product_design_code || data.stock_number)) || '';
+  }
+
   function renderCreativeDetails(data) {
     const fields = [
       ['Stock Number', data.stock_number],
@@ -1723,7 +1762,12 @@ function makeSearchableSelect(wrapEl, placeholderText) {
         const idx = Number(btn.dataset.idx);
         const img = data.images[idx];
         const filename = (data.stock_number || 'product') + '_' + (idx + 1) + '.jpg';
-        addFileItems([{ file: dataURItoFile(img.data_uri, filename), folder: '' }]);
+        addFileItems([{
+          file: dataURItoFile(img.data_uri, filename),
+          folder: '',
+          groupId: creativeGroupId(data),
+          groupLabel: creativeGroupLabel(data),
+        }]);
         btn.classList.add('is-added');
         btn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
       });
@@ -1750,7 +1794,6 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     const material = data.fabric_name || data.fabric_code || '';
     if (material) {
       reqMaterial.value = material;
-      reqMaterial.classList.remove('field-invalid');
       usedValues.add(material);
       filledFields.push('Material Composition');
     }
@@ -1830,6 +1873,8 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     const items = currentCreative.images.map((img, i) => ({
       file: dataURItoFile(img.data_uri, (currentCreative.stock_number || 'product') + '_' + (i + 1) + '.jpg'),
       folder: '',
+      groupId: creativeGroupId(currentCreative),
+      groupLabel: creativeGroupLabel(currentCreative),
     }));
     addFileItems(items);
     srImages.querySelectorAll('.sr-thumb-add').forEach(btn => {
@@ -1843,7 +1888,12 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     srAddNewInput.value = '';
     if (!picked.length) return;
 
-    addFileItems(picked.map(f => ({ file: f, folder: '' })));
+    addFileItems(picked.map(f => ({
+      file: f,
+      folder: '',
+      groupId: creativeGroupId(currentCreative),
+      groupLabel: creativeGroupLabel(currentCreative),
+    })));
     srUploadStatus.innerHTML = '<div class="stock-status success is-visible">Added ' + picked.length + ' supplementary photo' + (picked.length !== 1 ? 's' : '') + ' to your batch below.</div>';
   });
 
@@ -1854,15 +1904,62 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   const reqCare        = document.getElementById('req-care');
   const reqAdditional  = document.getElementById('req-additional');
   const resetPromptBtn = document.getElementById('reset-prompt-btn');
-
-  [reqMaterial, reqCare].forEach(el =>
-    el.addEventListener('input', () => el.classList.remove('field-invalid'))
-  );
+  const promptPreview      = document.getElementById('prompt-preview');
+  const togglePreviewBtn   = document.getElementById('toggle-preview-btn');
+  const togglePreviewLabel = document.getElementById('toggle-preview-label');
+  const promptPreviewHint  = document.getElementById('prompt-preview-hint');
 
   function getDescriptionType() {
     const checked = document.querySelector('input[name="desc_type"]:checked');
     return checked ? checked.value : 'PD';
   }
+
+  function getDescriptionTypeLabel() {
+    return getDescriptionType() === 'AE'
+      ? 'AE (Structured and Polished Style)'
+      : 'PD (Feminine Style)';
+  }
+
+  // ── Live prompt preview ─────────────────────────────────
+  let previewVisible = false;
+
+  function buildPromptPreview() {
+    const attrLines = getAttributes()
+      .map(a => '- ' + a.name + ': ' + a.description)
+      .join('\n');
+    let template = promptTA.value;
+    {% raw %}
+    template = template.split('{{ATTRIBUTES}}').join(attrLines || '(no attributes defined)');
+    template = template.split('{{BRAND_NAME}}').join(reqBrand.value.trim() || '(not provided)');
+    template = template.split('{{PRODUCT_CATEGORY}}').join(reqCategory.value.trim() || '(not provided)');
+    template = template.split('{{DESCRIPTION_TYPE}}').join(getDescriptionTypeLabel());
+    template = template.split('{{MATERIAL}}').join(reqMaterial.value.trim() || '(not provided)');
+    template = template.split('{{CARE_INSTRUCTIONS}}').join(reqCare.value.trim() || '(not provided)');
+    template = template.split('{{ADDITIONAL_INFO}}').join(reqAdditional.value.trim() || '(not provided)');
+    {% endraw %}
+    return PROMPT_INSTRUCTION + '\n\n' + template;
+  }
+
+  function renderPromptPreview() {
+    promptPreview.value = buildPromptPreview();
+  }
+
+  togglePreviewBtn.addEventListener('click', () => {
+    previewVisible = !previewVisible;
+    promptPreview.style.display = previewVisible ? '' : 'none';
+    promptPreviewHint.style.display = previewVisible ? '' : 'none';
+    togglePreviewLabel.textContent = previewVisible ? 'Hide preview' : 'Show preview';
+    if (previewVisible) renderPromptPreview();
+  });
+
+  promptTA.addEventListener('input', renderPromptPreview);
+  attrTbody.addEventListener('input', renderPromptPreview);
+  [reqBrand, reqCategory, reqMaterial, reqCare, reqAdditional].forEach(el =>
+    el.addEventListener('input', renderPromptPreview)
+  );
+  document.querySelectorAll('input[name="desc_type"]').forEach(r =>
+    r.addEventListener('change', renderPromptPreview)
+  );
 
   // ── Prompt source ──────────────────────────────────────
   const DEFAULT_PROMPT    = promptTA.value;
@@ -1871,7 +1968,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   const brandPromptStatus = document.getElementById('brand-prompt-status');
   const attrSourceStatus  = document.getElementById('attr-source-status');
 
-  resetPromptBtn.addEventListener('click', () => { promptTA.value = DEFAULT_PROMPT; });
+  resetPromptBtn.addEventListener('click', () => { promptTA.value = DEFAULT_PROMPT; renderPromptPreview(); });
 
   let brandsLoaded = false;
   const brandSS = makeSearchableSelect(document.getElementById('brand-ss'), 'Select brand…');
@@ -1884,6 +1981,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
       promptTA.value = DEFAULT_PROMPT;
       brandPromptStatus.style.display = 'none';
       if (document.getElementById('as-brand').checked) resetToCustomAttrs();
+      renderPromptPreview();
     }
   });
 
@@ -1901,6 +1999,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     } else {
       promptTA.value = DEFAULT_PROMPT;
       if (document.getElementById('as-brand').checked) resetToCustomAttrs();
+      renderPromptPreview();
     }
   }
 
@@ -1935,6 +2034,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           brandPromptStatus.style.display = 'flex';
           brandPromptStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> No active prompt for this brand — using default`;
         }
+        renderPromptPreview();
       })
       .catch(() => {});
   }
@@ -1978,6 +2078,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           attrSourceStatus.style.display = 'flex';
           attrSourceStatus.innerHTML = `<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> No attributes mapped for this brand — using custom`;
         }
+        renderPromptPreview();
       })
       .catch(() => {});
   }
@@ -1986,9 +2087,11 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     attrTbody.innerHTML = '';
     DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
     attrSourceStatus.style.display = 'none';
+    renderPromptPreview();
   }
 
   DEFAULT_ATTRS.forEach(a => addAttrRow(a.name, a.description));
+  renderPromptPreview();
 
   // ── File type check ────────────────────────────────────
   const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
@@ -2175,10 +2278,17 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     renderDupWarning();
   }
 
+  function groupCounts() {
+    const counts = {};
+    files.forEach(f => { if (f.groupId) counts[f.groupId] = (counts[f.groupId] || 0) + 1; });
+    return counts;
+  }
+
   function renderFileList() {
     const dupNames   = new Set(findDuplicates().map(([n]) => n));
     const currentKeys = new Set(files.map(f => f.file.name + '::' + f.file.size));
     const newKeys     = new Set([...currentKeys].filter(k => !renderedKeys.has(k)));
+    const gCounts      = groupCounts();
 
     fileListEl.innerHTML = '';
     files.forEach((item, idx) => {
@@ -2193,6 +2303,9 @@ function makeSearchableSelect(wrapEl, placeholderText) {
       const folderHtml = item.folder
         ? `<span class="file-folder"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>${escHtml(item.folder)}</span>`
         : '';
+      const groupHtml = (item.groupId && gCounts[item.groupId] > 1)
+        ? `<span class="group-badge" title="These photos will be combined into one description"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2"/><path d="M21 8v10a2 2 0 0 1-2 2H9"/></svg>${escHtml(item.groupLabel || 'Grouped')} · ${gCounts[item.groupId]} photos → 1 description</span>`
+        : '';
       const dupHtml = isDup
         ? `<span class="dup-badge"><svg width="9" height="9" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>Duplicate</span>`
         : '';
@@ -2201,7 +2314,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
         <img class="file-thumb" src="${item.url}" alt="" />
         <div class="file-info">
           <span class="file-name">${escHtml(item.file.name)}</span>
-          <span class="file-meta">${folderHtml}<span class="file-size">${formatSize(item.file.size)}</span></span>
+          <span class="file-meta">${folderHtml}${groupHtml}<span class="file-size">${formatSize(item.file.size)}</span></span>
         </div>
         ${dupHtml}
         <button class="file-rm" data-idx="${idx}" title="Remove">✕</button>`;
@@ -2270,11 +2383,11 @@ function makeSearchableSelect(wrapEl, placeholderText) {
       tr.style.transition = 'opacity .18s, transform .18s';
       tr.style.opacity = '0';
       tr.style.transform = 'translateX(-8px) scale(0.97)';
-      tr.addEventListener('transitionend', () => tr.remove(), { once: true });
+      tr.addEventListener('transitionend', () => { tr.remove(); renderPromptPreview(); }, { once: true });
     });
     attrTbody.appendChild(tr);
   }
-  addAttrBtn.addEventListener('click', () => addAttrRow('', '', true));
+  addAttrBtn.addEventListener('click', () => { addAttrRow('', '', true); renderPromptPreview(); });
 
   function getAttributes() {
     return Array.from(attrTbody.querySelectorAll('tr')).map(tr => {
@@ -2316,24 +2429,13 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     if (!files.length)            { showError('Please upload at least one image.'); return; }
     if (!getOutputFormats().length){ showError('Please select at least one output format.'); return; }
     if (!getAttributes().length)  { showError('Please add at least one attribute.'); return; }
-    if (!reqMaterial.value.trim()) {
-      reqMaterial.classList.add('field-invalid');
-      reqMaterial.focus();
-      showError('Please provide the Material Composition.');
-      return;
-    }
-    if (!reqCare.value.trim()) {
-      reqCare.classList.add('field-invalid');
-      reqCare.focus();
-      showError('Please provide the Care / Wash Instructions.');
-      return;
-    }
 
     processBtn.disabled = true;
     showProgress(0, files.length, 'Uploading files…');
 
     const fd = new FormData();
     files.forEach(item => fd.append('images', item.file));
+    fd.append('group_map',          JSON.stringify(files.map(item => item.groupId || null)));
     fd.append('attributes',         JSON.stringify(getAttributes()));
     fd.append('prompt_template',    promptTA.value);
     fd.append('output_formats',     JSON.stringify(getOutputFormats()));
@@ -2343,6 +2445,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     fd.append('material',           reqMaterial.value.trim());
     fd.append('care_instructions',  reqCare.value.trim());
     fd.append('additional_info',    reqAdditional.value.trim());
+    fd.append('output_filename',    outputFilename.value.trim());
 
     fetch('/process', { method: 'POST', body: fd })
       .then(r => r.json())

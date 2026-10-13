@@ -23,10 +23,15 @@ THUMB_HEIGHT = 133
 ROW_HEIGHT_PTS = 105  # ~140px at 96dpi
 
 
+def _sanitize_filename(name):
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '', name or '').strip().strip('.')
+    return name[:100]
+
+
 class AttributeGenerator:
-    def __init__(self, logger, file_data, settings, output_dir):
+    def __init__(self, logger, groups, settings, output_dir):
         self.__logger = logger
-        self.__file_data = file_data          # list of (filename, bytes)
+        self.__groups = groups                # list of groups; each group is a list of (filename, bytes)
         self.__output_dir = output_dir
 
         self.__api_key = os.environ.get('API_KEY', '')
@@ -43,6 +48,7 @@ class AttributeGenerator:
         self.__material = settings.get('material', '').strip()
         self.__care_instructions = settings.get('care_instructions', '').strip()
         self.__additional_info = settings.get('additional_info', '').strip()
+        self.__output_filename = settings.get('output_filename', '').strip()
 
         desc_type = settings.get('description_type', 'PD').strip().upper()
         self.__description_type_label = (
@@ -64,8 +70,8 @@ class AttributeGenerator:
         template = template.replace('{{BRAND_NAME}}', self.__brand_name or '(not provided)')
         template = template.replace('{{PRODUCT_CATEGORY}}', self.__product_category or '(not provided)')
         template = template.replace('{{DESCRIPTION_TYPE}}', self.__description_type_label)
-        template = template.replace('{{MATERIAL}}', self.__material)
-        template = template.replace('{{CARE_INSTRUCTIONS}}', self.__care_instructions)
+        template = template.replace('{{MATERIAL}}', self.__material or '(not provided)')
+        template = template.replace('{{CARE_INSTRUCTIONS}}', self.__care_instructions or '(not provided)')
         template = template.replace('{{ADDITIONAL_INFO}}', self.__additional_info or '(not provided)')
         return '{}\n\n{}'.format(self.__prompt_instruction, template)
 
@@ -76,22 +82,17 @@ class AttributeGenerator:
     def __encode_image(self, image_bytes):
         return base64.b64encode(image_bytes).decode('utf-8')
 
-    def __get_gpt_response(self, image_b64, prompt):
+    def __get_gpt_response(self, image_b64_list, prompt):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(self.__api_key),
         }
+        content = [{'type': 'text', 'text': prompt}]
+        for image_b64 in image_b64_list:
+            content.append({'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,{}'.format(image_b64)}})
         payload = {
             'model': self.__gpt_version,
-            'messages': [
-                {
-                    'role': 'user',
-                    'content': [
-                        {'type': 'text', 'text': prompt},
-                        {'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,{}'.format(image_b64)}},
-                    ],
-                }
-            ],
+            'messages': [{'role': 'user', 'content': content}],
             'max_tokens': 1000,
         }
         return requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=payload, timeout=60)
@@ -166,10 +167,6 @@ class AttributeGenerator:
     def process(self, progress_callback=None):
         if not self.__api_key:
             raise ValueError('API_KEY environment variable is not set.')
-        if not self.__material:
-            raise ValueError('Material Composition is required.')
-        if not self.__care_instructions:
-            raise ValueError('Care / Wash Instructions is required.')
 
         prompt = self.__build_prompt()
         do_xls = 'xls' in self.__output_formats
@@ -179,11 +176,12 @@ class AttributeGenerator:
 
         output_files = []
         ts = datetime.now().strftime('%Y%m%dT%H%M')
+        base_name = _sanitize_filename(self.__output_filename) or 'attributes_{}'.format(ts)
 
         # --- XLS setup ---
         xls_path, workbook, worksheet, xls_row = None, None, None, 1
         if do_xls:
-            xls_path = os.path.join(self.__output_dir, 'attributes_{}.xlsx'.format(ts))
+            xls_path = os.path.join(self.__output_dir, '{}.xlsx'.format(base_name))
             workbook = xlsxwriter.Workbook(xls_path)
             worksheet = workbook.add_worksheet('Products')
             header_fmt = workbook.add_format({'bold': True, 'bg_color': '#1B2A4A', 'font_color': '#FFFFFF', 'align': 'center', 'valign': 'vcenter', 'border': 1})
@@ -201,7 +199,7 @@ class AttributeGenerator:
         # --- CSV setup ---
         csv_path, csv_file, csv_writer = None, None, None
         if do_csv:
-            csv_path = os.path.join(self.__output_dir, 'attributes_{}.csv'.format(ts))
+            csv_path = os.path.join(self.__output_dir, '{}.csv'.format(base_name))
             csv_file = open(csv_path, 'w', newline='', encoding='utf-8-sig')
             csv_writer = csv.writer(csv_file)
             csv_writer.writerow(['File Name', 'Product Title', 'Product Description'] + attr_names)
@@ -209,26 +207,30 @@ class AttributeGenerator:
         txt_paths = []
         entry_count = 0
 
-        for idx, (filename, file_bytes) in enumerate(self.__file_data):
-            if progress_callback:
-                progress_callback(idx, 'Processing {} ({}/{})...'.format(filename, idx + 1, len(self.__file_data)), filename)
+        for idx, group in enumerate(self.__groups):
+            group_filenames = [fn for fn, _ in group]
+            primary_filename = group_filenames[0]
+            display_name = primary_filename if len(group) == 1 else '{} (+{} more)'.format(primary_filename, len(group) - 1)
 
-            # Rate limiting
+            if progress_callback:
+                progress_callback(idx, 'Processing {} ({}/{})...'.format(display_name, idx + 1, len(self.__groups)), display_name)
+
+            # Rate limiting — counts API calls (one per group), not raw photos
             if entry_count > 0 and entry_count % self.__rpm_limit == 0:
                 self.__logger.info('RPM limit reached — pausing 21 seconds.')
                 time.sleep(21)
 
-            self.__logger.info('Processing: %s', filename)
+            self.__logger.info('Processing: %s', display_name)
 
             try:
-                b64 = self.__encode_image(file_bytes)
-                resp = self.__get_gpt_response(b64, prompt)
+                b64_list = [self.__encode_image(file_bytes) for _, file_bytes in group]
+                resp = self.__get_gpt_response(b64_list, prompt)
                 entry_count += 1
 
                 data = resp.json()
                 choices = data.get('choices', [])
                 if not choices:
-                    self.__logger.warning('No choices in response for %s — API error: %s', filename, data)
+                    self.__logger.warning('No choices in response for %s — API error: %s', display_name, data)
                     continue
 
                 content = choices[0].get('message', {}).get('content', '')
@@ -240,9 +242,9 @@ class AttributeGenerator:
                 # XLS row
                 if do_xls and worksheet:
                     worksheet.set_row(xls_row, ROW_HEIGHT_PTS, cell_fmt)
-                    thumb = self.__make_thumb(file_bytes)
+                    thumb = self.__make_thumb(group[0][1])
                     # Use unique name per row so xlsxwriter doesn't deduplicate images
-                    thumb_name = '{}_row{}.jpg'.format(Path(filename).stem, xls_row)
+                    thumb_name = '{}_row{}.jpg'.format(Path(primary_filename).stem, xls_row)
                     worksheet.insert_image(xls_row, 0, thumb_name, {
                         'image_data': thumb,
                         'x_offset': 2,
@@ -259,12 +261,12 @@ class AttributeGenerator:
 
                 # CSV row
                 if do_csv and csv_writer:
-                    row = [filename, title, desc] + [attrs.get(n, '') for n in attr_names]
+                    row = ['; '.join(group_filenames), title, desc] + [attrs.get(n, '') for n in attr_names]
                     csv_writer.writerow(row)
 
                 # TXT file (one per product)
                 if do_txt:
-                    safe = re.sub(r'[<>:"/\\|?*\n\r]', '', title)[:120].strip() or Path(filename).stem
+                    safe = re.sub(r'[<>:"/\\|?*\n\r]', '', title)[:120].strip() or Path(primary_filename).stem
                     txt_path = os.path.join(self.__output_dir, '{}.txt'.format(safe))
                     # Avoid name collision
                     counter = 1
@@ -277,7 +279,7 @@ class AttributeGenerator:
                     txt_paths.append(txt_path)
 
             except Exception as e:
-                self.__logger.error('Error processing %s: %s', filename, e, exc_info=True)
+                self.__logger.error('Error processing %s: %s', display_name, e, exc_info=True)
                 continue
 
         # Finalize
@@ -299,11 +301,13 @@ class AttributeGenerator:
                     zf.write(fp, os.path.basename(fp))
 
         if progress_callback:
-            progress_callback(len(self.__file_data), 'Complete', '')
+            progress_callback(len(self.__groups), 'Complete', '')
 
         processed = entry_count
+        total_images = sum(len(g) for g in self.__groups)
         return {
-            'message': '{} image(s) processed successfully.'.format(processed),
+            'message': '{} product listing(s) generated from {} image(s).'.format(processed, total_images),
             'status': 'done',
             'zip_path': zip_path,
+            'output_basename': _sanitize_filename(self.__output_filename) or 'attribute-checker-results',
         }

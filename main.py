@@ -138,7 +138,7 @@ Present the product details as concise bullet points, one short sentence each. L
 
 {{ATTRIBUTES}}
 
-Then add two more bullets using the exact supplied values below — phrase them as a clean sentence, but do not change the facts:
+Then add up to two more bullets using the exact supplied values below — phrase them as a clean sentence, but do not change the facts. If a value is "(not provided)", omit that bullet entirely instead of guessing:
 - Material: {{MATERIAL}}
 - Care Instructions: {{CARE_INSTRUCTIONS}}
 
@@ -159,7 +159,7 @@ Use this standard notice exactly, with no changes:
 Do not invent measurements or recommend a specific size.
 
 ## 5. Care Instructions
-Restate the supplied Care / Wash Instructions ({{CARE_INSTRUCTIONS}}) as a short, standardized sentence. Do not assume the fabric's care requirements based on appearance alone, and do not add washing instructions that were not supplied.
+If Care / Wash Instructions is "(not provided)", omit the Care Instructions bullet entirely. Otherwise, restate the supplied Care / Wash Instructions ({{CARE_INSTRUCTIONS}}) as a short, standardized sentence. Do not assume the fabric's care requirements based on appearance alone, and do not add washing instructions that were not supplied.
 
 ## 6. Customer Support
 End with this standard line exactly, with no changes:
@@ -201,8 +201,8 @@ Generate the product listing in exactly this order, with no extra sections:
 
 **PRODUCT DETAILS**
 - [One labeled bullet per attribute listed in section 3]
-- Material: [restated from the supplied Material Composition]
-- Care Instructions: [restated from the supplied Care / Wash Instructions]
+- Material: [restated from the supplied Material Composition — omit this bullet if not supplied]
+- Care Instructions: [restated from the supplied Care / Wash Instructions — omit this bullet if not supplied]
 
 **FIT & SIZING**
 
@@ -224,7 +224,7 @@ Before returning the result, verify that:
 - The introduction follows the sentence count for the supplied Description Type.
 - The description is concise, polished, and easy to scan.
 - Product details are factual, practical, non-repetitive, and each bullet is labeled with its attribute name.
-- The Material and Care Instructions bullets match the supplied values.
+- The Material and Care Instructions bullets match the supplied values, or are omitted entirely when not supplied.
 - All attached photos have been considered.
 - No unsupported features, measurements, materials, or care instructions have been invented.
 - Tags are relevant, concise, and non-duplicative.
@@ -255,32 +255,53 @@ def index():
     )
 
 
+def _group_files(valid_files, group_ids):
+    """Combine files sharing a truthy group id into one group (one description);
+    files with no group id each become their own singleton group."""
+    groups = []
+    group_index = {}
+    for (filename, data), gid in zip(valid_files, group_ids):
+        if gid:
+            if gid not in group_index:
+                group_index[gid] = len(groups)
+                groups.append([])
+            groups[group_index[gid]].append((filename, data))
+        else:
+            groups.append([(filename, data)])
+    return groups
+
+
 @app.route('/process', methods=['POST'])
 def process():
     files = request.files.getlist('images')
-    valid_files = [(f.filename, f.read()) for f in files if f.filename]
-    if not valid_files:
-        return jsonify({'error': 'No files uploaded.'}), 400
 
-    raw_formats = request.form.get('output_formats', '["xls"]')
-    raw_attrs   = request.form.get('attributes', '[]')
+    raw_formats    = request.form.get('output_formats', '["xls"]')
+    raw_attrs      = request.form.get('attributes', '[]')
+    raw_group_map  = request.form.get('group_map', '[]')
 
     try:
         output_formats = json.loads(raw_formats)
         attributes     = json.loads(raw_attrs)
+        group_map      = json.loads(raw_group_map)
     except json.JSONDecodeError as exc:
         return jsonify({'error': 'Invalid JSON in form fields: {}'.format(exc)}), 400
+
+    valid_files = []
+    group_ids   = []
+    for i, f in enumerate(files):
+        if not f.filename:
+            continue
+        valid_files.append((f.filename, f.read()))
+        group_ids.append(group_map[i] if i < len(group_map) else None)
+
+    if not valid_files:
+        return jsonify({'error': 'No files uploaded.'}), 400
 
     if not output_formats:
         return jsonify({'error': 'Select at least one output format.'}), 400
 
     material          = request.form.get('material', '').strip()
     care_instructions = request.form.get('care_instructions', '').strip()
-
-    if not material:
-        return jsonify({'error': 'Material Composition is required.'}), 400
-    if not care_instructions:
-        return jsonify({'error': 'Care / Wash Instructions is required.'}), 400
 
     settings = {
         'attributes':         attributes,
@@ -293,23 +314,27 @@ def process():
         'material':           material,
         'care_instructions':  care_instructions,
         'additional_info':    request.form.get('additional_info', '').strip(),
+        'output_filename':    request.form.get('output_filename', '').strip(),
     }
+
+    groups = _group_files(valid_files, group_ids)
 
     job_id     = str(uuid.uuid4())
     output_dir = tempfile.mkdtemp()
 
     JOBS[job_id] = {
-        'status':       'queued',
-        'progress':     0,
-        'total':        len(valid_files),
-        'message':      'Queued…',
-        'current_file': '',
-        'zip_path':     '',
+        'status':            'queued',
+        'progress':          0,
+        'total':             len(groups),
+        'message':           'Queued…',
+        'current_file':      '',
+        'zip_path':          '',
+        'zip_download_name': 'attribute-checker-results.zip',
     }
 
     t = threading.Thread(
         target=_run_job,
-        args=(job_id, valid_files, settings, output_dir),
+        args=(job_id, groups, settings, output_dir),
         daemon=True,
     )
     t.start()
@@ -339,7 +364,7 @@ def download_result(job_id):
     return send_file(
         job['zip_path'],
         as_attachment=True,
-        download_name='attribute-checker-results.zip',
+        download_name=job.get('zip_download_name', 'attribute-checker-results.zip'),
         mimetype='application/zip',
     )
 
@@ -669,22 +694,23 @@ def api_creative_search():
 # Background job
 # ---------------------------------------------------------------------------
 
-def _run_job(job_id, file_data, settings, output_dir):
+def _run_job(job_id, groups, settings, output_dir):
     try:
         JOBS[job_id]['status'] = 'processing'
 
         def on_progress(idx, msg, filename=''):
             JOBS[job_id].update({'progress': idx, 'message': msg, 'current_file': filename})
 
-        generator = AttributeGenerator(logger, file_data, settings, output_dir)
+        generator = AttributeGenerator(logger, groups, settings, output_dir)
         result    = generator.process(progress_callback=on_progress)
 
         JOBS[job_id].update({
-            'status':       'done',
-            'progress':     JOBS[job_id]['total'],
-            'message':      result.get('message', 'Done.'),
-            'current_file': '',
-            'zip_path':     result.get('zip_path', ''),
+            'status':            'done',
+            'progress':          JOBS[job_id]['total'],
+            'message':           result.get('message', 'Done.'),
+            'current_file':      '',
+            'zip_path':          result.get('zip_path', ''),
+            'zip_download_name': '{}.zip'.format(result.get('output_basename', 'attribute-checker-results')),
         })
     except Exception as exc:
         logger.error('Job %s failed: %s', job_id, exc, exc_info=True)

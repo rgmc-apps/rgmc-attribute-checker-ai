@@ -1,0 +1,101 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RGMC Gateway — Automatic Dev Item Comment on Push
+#
+# Drop this file into .github/workflows/ of any repository.
+#
+# Required repository secrets:
+#   RGMC_GATEWAY_URL    — base URL of the gateway, e.g. https://your-gateway.com
+#   RGMC_WEBHOOK_SECRET — must match the WEBHOOK_SECRET env var on the gateway
+#
+# Usage in commit messages:
+#   Include one or more dev item codes anywhere in the message, e.g.:
+#     "Fix login timeout DI-0012"
+#     "Refactor auth module [DI-0012, DI-0015]"
+#   Commits with no DI-XXXX codes are silently skipped.
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Notify RGMC Dev Items
+
+on:
+  push:
+
+jobs:
+  notify-dev-items:
+    name: Comment on referenced dev items
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post commit comments to dev items
+        uses: actions/github-script@v7
+        env:
+          GATEWAY_URL:     ${{ secrets.RGMC_GATEWAY_URL }}
+          WEBHOOK_SECRET:  ${{ secrets.RGMC_WEBHOOK_SECRET }}
+        with:
+          script: |
+            const gatewayUrl    = process.env.GATEWAY_URL;
+            const webhookSecret = process.env.WEBHOOK_SECRET;
+
+            if (!gatewayUrl || !webhookSecret) {
+              core.warning('RGMC_GATEWAY_URL and/or RGMC_WEBHOOK_SECRET not configured — skipping dev item notifications.');
+              return;
+            }
+
+            const repo   = context.repo.owner + '/' + context.repo.repo;
+            const branch = context.ref.replace('refs/heads/', '');
+
+            // Collect commits: prefer the full list, fall back to head_commit only.
+            const commits = (context.payload.commits && context.payload.commits.length > 0)
+              ? context.payload.commits
+              : (context.payload.head_commit ? [context.payload.head_commit] : []);
+
+            if (commits.length === 0) {
+              core.info('No commits found in push payload. Skipping.');
+              return;
+            }
+
+            for (const commit of commits) {
+              const message = commit.message || '';
+              const sha     = commit.id || '';
+              const author  = commit.author?.name || 'Unknown';
+              const url     = commit.url || '';
+
+              // Quick client-side check: skip commits that have no DI-XXXX codes.
+              if (!/\bDI-\d+\b/i.test(message)) {
+                core.info(`Commit ${sha.slice(0, 8)}: no dev item codes — skipped.`);
+                continue;
+              }
+
+              const payload = {
+                commit_message: message,
+                commit_sha:     sha,
+                commit_author:  author,
+                commit_url:     url,
+                repo_name:      repo,
+                branch:         branch,
+              };
+
+              let response;
+              try {
+                response = await fetch(`${gatewayUrl}/api/webhooks/github-push`, {
+                  method:  'POST',
+                  headers: {
+                    'Content-Type':    'application/json',
+                    'X-Webhook-Secret': webhookSecret,
+                  },
+                  body: JSON.stringify(payload),
+                });
+              } catch (err) {
+                core.warning(`Commit ${sha.slice(0, 8)}: request failed — ${err.message}`);
+                continue;
+              }
+
+              const body = await response.text();
+
+              if (response.ok) {
+                core.info(`Commit ${sha.slice(0, 8)}: HTTP ${response.status} — ${body}`);
+              } else {
+                core.warning(
+                  `Commit ${sha.slice(0, 8)}: gateway returned HTTP ${response.status} — ${body}`
+                );
+              }
+            }
