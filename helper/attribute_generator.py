@@ -31,7 +31,7 @@ def _sanitize_filename(name):
 class AttributeGenerator:
     def __init__(self, logger, groups, settings, output_dir):
         self.__logger = logger
-        self.__groups = groups                # list of groups; each group is a list of (filename, bytes)
+        self.__groups = groups                # list of {'files': [(filename, bytes), ...], 'group_key': str}
         self.__output_dir = output_dir
 
         self.__api_key = os.environ.get('API_KEY', '')
@@ -39,40 +39,48 @@ class AttributeGenerator:
         self.__rpm_limit = int(os.environ.get('GPT_LIMIT', 10))
 
         self.__attributes = settings.get('attributes', [])
-        self.__prompt_template = settings.get('prompt_template', '')
         self.__prompt_instruction = settings.get('prompt_instruction', '')
         self.__output_formats = [f.lower() for f in settings.get('output_formats', ['xls'])]
-
-        self.__brand_name = settings.get('brand_name', '').strip()
-        self.__product_category = settings.get('product_category', '').strip()
-        self.__material = settings.get('material', '').strip()
-        self.__care_instructions = settings.get('care_instructions', '').strip()
-        self.__additional_info = settings.get('additional_info', '').strip()
         self.__output_filename = settings.get('output_filename', '').strip()
 
-        desc_type = settings.get('description_type', 'PD').strip().upper()
-        self.__description_type_label = (
-            'AE (Structured and Polished Style)' if desc_type == 'AE'
-            else 'PD (Feminine Style)'
-        )
+        # Required Inputs + Prompt Template are per description-batch (per group), so a
+        # batch with multiple products can use a different prompt/brand/material for each.
+        self.__group_settings = settings.get('group_settings', {})
+        self.__default_group_key = settings.get('default_group_key', '__default__')
+        self.__default_prompt_template = settings.get('default_prompt_template', '')
 
     # ------------------------------------------------------------------
     # Prompt
     # ------------------------------------------------------------------
 
-    def __build_prompt(self):
+    def __resolve_group_settings(self, group_key):
+        gs = self.__group_settings.get(group_key) or self.__group_settings.get(self.__default_group_key) or {}
+        desc_type = (gs.get('description_type') or 'PD').strip().upper()
+        desc_label = 'AE (Structured and Polished Style)' if desc_type == 'AE' else 'PD (Feminine Style)'
+        return {
+            'prompt_template':   gs.get('prompt_template') or self.__default_prompt_template,
+            'brand_name':        (gs.get('brand_name') or '').strip(),
+            'product_category':  (gs.get('product_category') or '').strip(),
+            'material':          (gs.get('material') or '').strip(),
+            'care_instructions': (gs.get('care_instructions') or '').strip(),
+            'additional_info':   (gs.get('additional_info') or '').strip(),
+            'description_type_label': desc_label,
+        }
+
+    def __build_prompt(self, group_key):
+        resolved = self.__resolve_group_settings(group_key)
         attr_lines = '\n'.join(
             '- {}: {}'.format(a['name'], a['description'])
             for a in self.__attributes
         )
-        template = self.__prompt_template
+        template = resolved['prompt_template']
         template = template.replace('{{ATTRIBUTES}}', attr_lines)
-        template = template.replace('{{BRAND_NAME}}', self.__brand_name or '(not provided)')
-        template = template.replace('{{PRODUCT_CATEGORY}}', self.__product_category or '(not provided)')
-        template = template.replace('{{DESCRIPTION_TYPE}}', self.__description_type_label)
-        template = template.replace('{{MATERIAL}}', self.__material or '(not provided)')
-        template = template.replace('{{CARE_INSTRUCTIONS}}', self.__care_instructions or '(not provided)')
-        template = template.replace('{{ADDITIONAL_INFO}}', self.__additional_info or '(not provided)')
+        template = template.replace('{{BRAND_NAME}}', resolved['brand_name'] or '(not provided)')
+        template = template.replace('{{PRODUCT_CATEGORY}}', resolved['product_category'] or '(not provided)')
+        template = template.replace('{{DESCRIPTION_TYPE}}', resolved['description_type_label'])
+        template = template.replace('{{MATERIAL}}', resolved['material'] or '(not provided)')
+        template = template.replace('{{CARE_INSTRUCTIONS}}', resolved['care_instructions'] or '(not provided)')
+        template = template.replace('{{ADDITIONAL_INFO}}', resolved['additional_info'] or '(not provided)')
         return '{}\n\n{}'.format(self.__prompt_instruction, template)
 
     # ------------------------------------------------------------------
@@ -168,7 +176,6 @@ class AttributeGenerator:
         if not self.__api_key:
             raise ValueError('API_KEY environment variable is not set.')
 
-        prompt = self.__build_prompt()
         do_xls = 'xls' in self.__output_formats
         do_csv = 'csv' in self.__output_formats
         do_txt = 'txt' in self.__output_formats
@@ -207,7 +214,9 @@ class AttributeGenerator:
         txt_paths = []
         entry_count = 0
 
-        for idx, group in enumerate(self.__groups):
+        for idx, group_entry in enumerate(self.__groups):
+            group = group_entry['files']
+            prompt = self.__build_prompt(group_entry['group_key'])
             group_filenames = [fn for fn, _ in group]
             primary_filename = group_filenames[0]
             display_name = primary_filename if len(group) == 1 else '{} (+{} more)'.format(primary_filename, len(group) - 1)
@@ -304,7 +313,7 @@ class AttributeGenerator:
             progress_callback(len(self.__groups), 'Complete', '')
 
         processed = entry_count
-        total_images = sum(len(g) for g in self.__groups)
+        total_images = sum(len(g['files']) for g in self.__groups)
         return {
             'message': '{} product listing(s) generated from {} image(s).'.format(processed, total_images),
             'status': 'done',

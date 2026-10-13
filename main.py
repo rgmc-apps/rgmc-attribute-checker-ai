@@ -255,19 +255,24 @@ def index():
     )
 
 
+DEFAULT_GROUP_KEY = '__default__'
+
+
 def _group_files(valid_files, group_ids):
-    """Combine files sharing a truthy group id into one group (one description);
-    files with no group id each become their own singleton group."""
+    """Combine files sharing a truthy group id into one group (one description, one
+    settings/prompt-template slot); files with no group id each become their own
+    singleton group using the DEFAULT_GROUP_KEY settings slot."""
     groups = []
     group_index = {}
     for (filename, data), gid in zip(valid_files, group_ids):
+        key = gid or DEFAULT_GROUP_KEY
         if gid:
             if gid not in group_index:
                 group_index[gid] = len(groups)
-                groups.append([])
-            groups[group_index[gid]].append((filename, data))
+                groups.append({'files': [], 'group_key': key})
+            groups[group_index[gid]]['files'].append((filename, data))
         else:
-            groups.append([(filename, data)])
+            groups.append({'files': [(filename, data)], 'group_key': key})
     return groups
 
 
@@ -275,14 +280,16 @@ def _group_files(valid_files, group_ids):
 def process():
     files = request.files.getlist('images')
 
-    raw_formats    = request.form.get('output_formats', '["xls"]')
-    raw_attrs      = request.form.get('attributes', '[]')
-    raw_group_map  = request.form.get('group_map', '[]')
+    raw_formats        = request.form.get('output_formats', '["xls"]')
+    raw_attrs          = request.form.get('attributes', '[]')
+    raw_group_map      = request.form.get('group_map', '[]')
+    raw_group_settings = request.form.get('group_settings', '{}')
 
     try:
         output_formats = json.loads(raw_formats)
         attributes     = json.loads(raw_attrs)
         group_map      = json.loads(raw_group_map)
+        group_settings = json.loads(raw_group_settings)
     except json.JSONDecodeError as exc:
         return jsonify({'error': 'Invalid JSON in form fields: {}'.format(exc)}), 400
 
@@ -300,21 +307,14 @@ def process():
     if not output_formats:
         return jsonify({'error': 'Select at least one output format.'}), 400
 
-    material          = request.form.get('material', '').strip()
-    care_instructions = request.form.get('care_instructions', '').strip()
-
     settings = {
         'attributes':         attributes,
-        'prompt_template':    request.form.get('prompt_template', PROMPT_TEMPLATE_DEFAULT),
         'prompt_instruction': PROMPT_INSTRUCTION,
         'output_formats':     output_formats,
-        'brand_name':         request.form.get('brand_name', '').strip(),
-        'product_category':   request.form.get('product_category', '').strip(),
-        'description_type':   request.form.get('description_type', 'PD').strip(),
-        'material':           material,
-        'care_instructions':  care_instructions,
-        'additional_info':    request.form.get('additional_info', '').strip(),
         'output_filename':    request.form.get('output_filename', '').strip(),
+        'group_settings':     group_settings,
+        'default_group_key':  DEFAULT_GROUP_KEY,
+        'default_prompt_template': PROMPT_TEMPLATE_DEFAULT,
     }
 
     groups = _group_files(valid_files, group_ids)

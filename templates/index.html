@@ -431,6 +431,13 @@
     }
     .prompt-preview:focus { box-shadow: none; border-color: var(--border); }
 
+    .group-settings-selector-row {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: var(--orange-lt); border: 1px solid rgba(212,112,10,.2);
+      border-radius: var(--r-sm); padding: 10px 14px; margin-bottom: 18px;
+    }
+    .group-settings-select { flex: 1; min-width: 220px; width: auto; }
+
     /* ════════════════════════════════
        REQUIRED INPUTS
     ════════════════════════════════ */
@@ -1274,12 +1281,22 @@
       </div>
       <div id="brand-prompt-status"></div>
 
+      <!-- Per-batch settings selector (shown once more than one description-group exists) -->
+      <div id="group-settings-selector-row" class="group-settings-selector-row" style="display:none;">
+        <div class="hint-wrap">
+          <span class="ps-label">Editing settings for</span>
+          <button class="hint-btn" type="button" aria-label="About per-batch settings">?</button>
+          <div class="hint-tip" role="tooltip">Each product searched from the creatives database keeps its own Required Inputs and Prompt Template. Switch here to review or customize a specific one before generating.</div>
+        </div>
+        <select id="group-settings-select" class="text-input group-settings-select"></select>
+      </div>
+
       <!-- Required Inputs -->
       <div class="req-inputs-head">
         <span class="field-label">Required Inputs</span>
       </div>
       <p class="helper-text" style="margin-top:-2px;margin-bottom:10px;">
-        Merged into the prompt for every image in this batch — fill these in once per upload, not per attribute.
+        Merged into the prompt for the images below — fill these in once per product, not per attribute. Searching a different product above switches to its own settings automatically; use the selector above to review or edit a specific one.
       </p>
       <div class="req-inputs-grid">
         <div>
@@ -1777,23 +1794,28 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   function fillRequiredInputsFromCreative(data) {
     const usedValues = new Set();
     const filledFields = [];
+    const snap = {
+      brandName: '', productCategory: '', descriptionType: 'PD',
+      material: '', careInstructions: '', additionalInfo: '',
+      promptTemplate: DEFAULT_PROMPT,
+    };
 
     if (data.brand) {
-      reqBrand.value = data.brand;
+      snap.brandName = data.brand;
       usedValues.add(data.brand);
       filledFields.push('Brand Name');
     }
 
     const category = data.category || data.item_group || '';
     if (category) {
-      reqCategory.value = category;
+      snap.productCategory = category;
       usedValues.add(category);
       filledFields.push('Product Category');
     }
 
     const material = data.fabric_name || data.fabric_code || '';
     if (material) {
-      reqMaterial.value = material;
+      snap.material = material;
       usedValues.add(material);
       filledFields.push('Material Composition');
     }
@@ -1817,13 +1839,22 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     addExtra('Description', data.description);
     addExtra('Remark', data.remark);
     if (extraLines.length) {
-      reqAdditional.value = extraLines.join('\n');
+      snap.additionalInfo = extraLines.join('\n');
       filledFields.push('Additional Product Information');
+    }
+
+    // This product gets its own Required Inputs + Prompt Template slot, so it
+    // won't be overwritten by the next search — switch the editor to it now.
+    const groupId = creativeGroupId(data);
+    if (groupId) {
+      switchToGroup(groupId, snap);
+    } else {
+      applyFieldsSnapshot(snap);
     }
 
     if (filledFields.length) {
       srFillNote.classList.add('is-visible');
-      srFillNote.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Filled into Required Inputs below: ' + filledFields.join(', ') + '. Care / Wash Instructions still needs to be entered manually, and anything here can be edited before generating.';
+      srFillNote.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Filled into this product\'s own settings below: ' + filledFields.join(', ') + '. Care / Wash Instructions still needs to be entered manually, and anything here (including the prompt) can be edited before generating — add its photos below to keep these settings.';
     } else {
       srFillNote.classList.remove('is-visible');
       srFillNote.innerHTML = '';
@@ -1967,6 +1998,79 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   const brandSelectWrap   = document.getElementById('brand-select-wrap');
   const brandPromptStatus = document.getElementById('brand-prompt-status');
   const attrSourceStatus  = document.getElementById('attr-source-status');
+
+  // ── Per-batch settings: Required Inputs + Prompt Template, one slot per ──
+  // description-group ('__default__' covers manually uploaded, ungrouped photos),
+  // so a batch with multiple products can use a different brand/prompt per product.
+  let groupSettings   = {};
+  let currentGroupKey = '__default__';
+
+  function currentFieldsSnapshot() {
+    return {
+      brandName:        reqBrand.value.trim(),
+      productCategory:  reqCategory.value.trim(),
+      descriptionType:  getDescriptionType(),
+      material:         reqMaterial.value.trim(),
+      careInstructions: reqCare.value.trim(),
+      additionalInfo:   reqAdditional.value.trim(),
+      promptTemplate:   promptTA.value,
+    };
+  }
+
+  function applyFieldsSnapshot(snap) {
+    reqBrand.value = snap.brandName || '';
+    reqCategory.value = snap.productCategory || '';
+    document.getElementById(snap.descriptionType === 'AE' ? 'dt-ae' : 'dt-pd').checked = true;
+    reqMaterial.value = snap.material || '';
+    reqCare.value = snap.careInstructions || '';
+    reqAdditional.value = snap.additionalInfo || '';
+    promptTA.value = snap.promptTemplate || DEFAULT_PROMPT;
+    renderPromptPreview();
+  }
+
+  function switchToGroup(newKey, snapshotOverride) {
+    if (currentGroupKey) groupSettings[currentGroupKey] = currentFieldsSnapshot();
+    currentGroupKey = newKey;
+    groupSettings[newKey] = snapshotOverride || groupSettings[newKey] || currentFieldsSnapshot();
+    applyFieldsSnapshot(groupSettings[newKey]);
+  }
+
+  groupSettings['__default__'] = currentFieldsSnapshot();
+
+  const groupSettingsRow    = document.getElementById('group-settings-selector-row');
+  const groupSettingsSelect = document.getElementById('group-settings-select');
+
+  function refreshGroupSettingsSelector() {
+    const groupIds = [...new Set(files.map(f => f.groupId).filter(Boolean))];
+
+    if (!groupIds.length) {
+      groupSettingsRow.style.display = 'none';
+      if (currentGroupKey !== '__default__') switchToGroup('__default__');
+      return;
+    }
+
+    groupSettingsRow.style.display = 'flex';
+    groupSettingsSelect.innerHTML = '';
+    const defOpt = document.createElement('option');
+    defOpt.value = '__default__';
+    defOpt.textContent = 'Default (manually uploaded photos)';
+    groupSettingsSelect.appendChild(defOpt);
+    groupIds.forEach(gid => {
+      const sample = files.find(f => f.groupId === gid);
+      const count  = files.filter(f => f.groupId === gid).length;
+      const opt = document.createElement('option');
+      opt.value = gid;
+      opt.textContent = (sample.groupLabel || gid) + ' (' + count + ' photo' + (count !== 1 ? 's' : '') + ')';
+      groupSettingsSelect.appendChild(opt);
+    });
+
+    if (currentGroupKey !== '__default__' && !groupIds.includes(currentGroupKey)) {
+      switchToGroup('__default__');
+    }
+    groupSettingsSelect.value = currentGroupKey;
+  }
+
+  groupSettingsSelect.addEventListener('change', () => switchToGroup(groupSettingsSelect.value));
 
   resetPromptBtn.addEventListener('click', () => { promptTA.value = DEFAULT_PROMPT; renderPromptPreview(); });
 
@@ -2181,6 +2285,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     dupDismissed = false;
     applySort();
     refresh();
+    refreshGroupSettingsSelector();
   }
 
   function setReading(on) {
@@ -2264,6 +2369,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     });
     dupDismissed = false;
     refresh();
+    refreshGroupSettingsSelector();
   });
 
   btnDismissDups.addEventListener('click', () => {
@@ -2333,6 +2439,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
           if (ci !== -1) { URL.revokeObjectURL(item.url); files.splice(ci, 1); }
           dupDismissed = false;
           refresh();
+          refreshGroupSettingsSelector();
         }, { once: true });
       })
     );
@@ -2430,22 +2537,33 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     if (!getOutputFormats().length){ showError('Please select at least one output format.'); return; }
     if (!getAttributes().length)  { showError('Please add at least one attribute.'); return; }
 
+    // Persist whatever's currently live (in case the user never switched away) before submitting.
+    groupSettings[currentGroupKey] = currentFieldsSnapshot();
+
+    const groupSettingsPayload = {};
+    Object.keys(groupSettings).forEach(key => {
+      const s = groupSettings[key];
+      groupSettingsPayload[key] = {
+        brand_name:        s.brandName,
+        product_category:  s.productCategory,
+        description_type:  s.descriptionType,
+        material:          s.material,
+        care_instructions: s.careInstructions,
+        additional_info:   s.additionalInfo,
+        prompt_template:   s.promptTemplate,
+      };
+    });
+
     processBtn.disabled = true;
     showProgress(0, files.length, 'Uploading files…');
 
     const fd = new FormData();
     files.forEach(item => fd.append('images', item.file));
-    fd.append('group_map',          JSON.stringify(files.map(item => item.groupId || null)));
-    fd.append('attributes',         JSON.stringify(getAttributes()));
-    fd.append('prompt_template',    promptTA.value);
-    fd.append('output_formats',     JSON.stringify(getOutputFormats()));
-    fd.append('brand_name',         reqBrand.value.trim());
-    fd.append('product_category',   reqCategory.value.trim());
-    fd.append('description_type',   getDescriptionType());
-    fd.append('material',           reqMaterial.value.trim());
-    fd.append('care_instructions',  reqCare.value.trim());
-    fd.append('additional_info',    reqAdditional.value.trim());
-    fd.append('output_filename',    outputFilename.value.trim());
+    fd.append('group_map',       JSON.stringify(files.map(item => item.groupId || null)));
+    fd.append('group_settings',  JSON.stringify(groupSettingsPayload));
+    fd.append('attributes',      JSON.stringify(getAttributes()));
+    fd.append('output_formats',  JSON.stringify(getOutputFormats()));
+    fd.append('output_filename', outputFilename.value.trim());
 
     fetch('/process', { method: 'POST', body: fd })
       .then(r => r.json())
