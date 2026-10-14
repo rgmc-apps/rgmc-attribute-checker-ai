@@ -28,6 +28,21 @@ def _sanitize_filename(name):
     return name[:100]
 
 
+_PIL_FORMAT_TO_MIME = {'JPEG': 'image/jpeg', 'PNG': 'image/png', 'GIF': 'image/gif', 'WEBP': 'image/webp'}
+_EXT_TO_MIME = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp'}
+
+
+def _detect_mime(filename, image_bytes):
+    if PIL_AVAILABLE:
+        try:
+            fmt = (Image.open(BytesIO(image_bytes)).format or '').upper()
+            if fmt in _PIL_FORMAT_TO_MIME:
+                return _PIL_FORMAT_TO_MIME[fmt]
+        except Exception:
+            pass
+    return _EXT_TO_MIME.get(Path(filename).suffix.lower(), 'image/png')
+
+
 class AttributeGenerator:
     def __init__(self, logger, groups, settings, output_dir):
         self.__logger = logger
@@ -87,21 +102,23 @@ class AttributeGenerator:
     # OpenAI
     # ------------------------------------------------------------------
 
-    def __encode_image(self, image_bytes):
-        return base64.b64encode(image_bytes).decode('utf-8')
+    def __encode_image(self, filename, image_bytes):
+        mime = _detect_mime(filename, image_bytes)
+        b64 = base64.b64encode(image_bytes).decode('utf-8')
+        return 'data:{};base64,{}'.format(mime, b64)
 
-    def __get_gpt_response(self, image_b64_list, prompt):
+    def __get_gpt_response(self, image_data_urls, prompt):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer {}'.format(self.__api_key),
         }
         content = [{'type': 'text', 'text': prompt}]
-        for image_b64 in image_b64_list:
-            content.append({'type': 'image_url', 'image_url': {'url': 'data:image/jpeg;base64,{}'.format(image_b64)}})
+        for data_url in image_data_urls:
+            content.append({'type': 'image_url', 'image_url': {'url': data_url}})
         payload = {
             'model': self.__gpt_version,
             'messages': [{'role': 'user', 'content': content}],
-            'max_tokens': 1000,
+            'max_completion_tokens': 1000,
         }
         return requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=payload, timeout=60)
 
@@ -212,7 +229,9 @@ class AttributeGenerator:
             csv_writer.writerow(['File Name', 'Product Title', 'Product Description'] + attr_names)
 
         txt_paths = []
-        entry_count = 0
+        attempt_count = 0
+        success_count = 0
+        last_error = ''
 
         for idx, group_entry in enumerate(self.__groups):
             group = group_entry['files']
@@ -225,20 +244,21 @@ class AttributeGenerator:
                 progress_callback(idx, 'Processing {} ({}/{})...'.format(display_name, idx + 1, len(self.__groups)), display_name)
 
             # Rate limiting — counts API calls (one per group), not raw photos
-            if entry_count > 0 and entry_count % self.__rpm_limit == 0:
+            if attempt_count > 0 and attempt_count % self.__rpm_limit == 0:
                 self.__logger.info('RPM limit reached — pausing 21 seconds.')
                 time.sleep(21)
 
             self.__logger.info('Processing: %s', display_name)
 
             try:
-                b64_list = [self.__encode_image(file_bytes) for _, file_bytes in group]
-                resp = self.__get_gpt_response(b64_list, prompt)
-                entry_count += 1
+                data_urls = [self.__encode_image(fn, file_bytes) for fn, file_bytes in group]
+                resp = self.__get_gpt_response(data_urls, prompt)
+                attempt_count += 1
 
                 data = resp.json()
                 choices = data.get('choices', [])
                 if not choices:
+                    last_error = (data.get('error') or {}).get('message') or str(data)[:300]
                     self.__logger.warning('No choices in response for %s — API error: %s', display_name, data)
                     continue
 
@@ -287,7 +307,10 @@ class AttributeGenerator:
                         tf.write(content)
                     txt_paths.append(txt_path)
 
+                success_count += 1
+
             except Exception as e:
+                last_error = str(e)
                 self.__logger.error('Error processing %s: %s', display_name, e, exc_info=True)
                 continue
 
@@ -312,10 +335,15 @@ class AttributeGenerator:
         if progress_callback:
             progress_callback(len(self.__groups), 'Complete', '')
 
-        processed = entry_count
+        total_groups = len(self.__groups)
         total_images = sum(len(g['files']) for g in self.__groups)
+        message = '{} product listing(s) generated from {} image(s).'.format(success_count, total_images)
+        if success_count < total_groups:
+            failed = total_groups - success_count
+            message += ' {} failed{}'.format(failed, ' — {}'.format(last_error) if last_error else '.')
+
         return {
-            'message': '{} product listing(s) generated from {} image(s).'.format(processed, total_images),
+            'message': message,
             'status': 'done',
             'zip_path': zip_path,
             'output_basename': _sanitize_filename(self.__output_filename) or 'attribute-checker-results',
