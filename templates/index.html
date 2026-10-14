@@ -488,6 +488,7 @@
       cursor: pointer; padding: 2px 4px;
     }
     .btn-text-sm:hover { text-decoration: underline; }
+    .btn-text-sm:disabled { opacity: .6; cursor: default; text-decoration: none; }
 
     /* ════════════════════════════════
        PROMPT SOURCE TOGGLE
@@ -1516,6 +1517,10 @@
         </div>
         <p id="error-msg"></p>
       </div>
+      <button class="btn-text-sm" type="button" id="email-log-btn-error" style="display:none;margin-top:8px;">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span class="email-log-label">Email this log</span>
+      </button>
     </div>
   </div>
 
@@ -1535,6 +1540,10 @@
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Download Results (.zip)
       </a>
+      <button class="btn-text-sm" type="button" id="email-log-btn-result" style="margin-top:8px;">
+        <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span class="email-log-label">Email this log</span>
+      </button>
     </div>
   </div>
 
@@ -1676,6 +1685,8 @@ function makeSearchableSelect(wrapEl, placeholderText) {
   const resultCard     = document.getElementById('result-card');
   const downloadBtn    = document.getElementById('download-btn');
   const resultMsg      = document.getElementById('result-msg');
+  const emailLogBtnError  = document.getElementById('email-log-btn-error');
+  const emailLogBtnResult = document.getElementById('email-log-btn-result');
 
   // ── Image source / stock number search ─────────────────
   const uploadModePanel  = document.getElementById('upload-mode-panel');
@@ -2617,6 +2628,7 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     errorCard.style.display = 'block';
     progressCard.style.display = resultCard.style.display = 'none';
     errorMsg.textContent = msg;
+    emailLogBtnError.style.display = currentJobId ? '' : 'none';
   }
 
   function showResult(jobId, msg) {
@@ -2628,6 +2640,26 @@ function makeSearchableSelect(wrapEl, placeholderText) {
     resultMsg.textContent = msg;
     resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
+
+  function emailJobLog(btn) {
+    if (!currentJobId) return;
+    const label = btn.querySelector('.email-log-label');
+    const original = label.textContent;
+    btn.disabled = true;
+    label.textContent = 'Sending…';
+    fetch('/api/jobs/' + currentJobId + '/email-log', { method: 'POST' })
+      .then(r => r.json())
+      .then(data => {
+        label.textContent = data.sent ? 'Sent ✓' : 'Failed to send';
+      })
+      .catch(() => { label.textContent = 'Failed to send'; })
+      .finally(() => {
+        setTimeout(() => { btn.disabled = false; label.textContent = original; }, 3000);
+      });
+  }
+
+  emailLogBtnError.addEventListener('click', () => emailJobLog(emailLogBtnError));
+  emailLogBtnResult.addEventListener('click', () => emailJobLog(emailLogBtnResult));
 
   function formatSize(bytes) {
     if (bytes < 1024)        return bytes + ' B';

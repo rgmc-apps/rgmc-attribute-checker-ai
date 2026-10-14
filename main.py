@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import threading
+import traceback
 import uuid
 import tempfile
 
@@ -330,6 +331,7 @@ def process():
         'current_file':      '',
         'zip_path':          '',
         'zip_download_name': 'attribute-checker-results.zip',
+        'log_text':          '',
     }
 
     t = threading.Thread(
@@ -367,6 +369,17 @@ def download_result(job_id):
         download_name=job.get('zip_download_name', 'attribute-checker-results.zip'),
         mimetype='application/zip',
     )
+
+
+@app.route('/api/jobs/<job_id>/email-log', methods=['POST'])
+def email_job_log(job_id):
+    job = JOBS.get(job_id)
+    if not job:
+        return jsonify({'error': 'Job not found.'}), 404
+    sent, err = _send_job_log_email(job_id, job)
+    if not sent:
+        return jsonify({'sent': False, 'error': err}), 502
+    return jsonify({'sent': True})
 
 
 # ---------------------------------------------------------------------------
@@ -694,6 +707,42 @@ def api_creative_search():
 # Background job
 # ---------------------------------------------------------------------------
 
+def _send_job_log_email(job_id, job):
+    """POST the job's log to rgmc-gcp-api's generic mail endpoint. Recipient is
+    whatever that service's own MAIL_RECIPIENT env var is configured to — this app
+    has no SMTP credentials of its own."""
+    subject = 'Attribute Checker - Job {} ({})'.format(job_id, job.get('status', 'unknown'))
+    body_parts = [
+        'Status: {}'.format(job.get('status', '')),
+        'Summary: {}'.format(job.get('message', '')),
+    ]
+    log_text = job.get('log_text', '')
+    if log_text:
+        body_parts.extend(['', log_text])
+    body = '\n'.join(body_parts)
+
+    try:
+        resp = requests.post(
+            '{}/notifications/send-mail'.format(CREATIVE_API_BASE_URL),
+            json={'subject': subject, 'body': body},
+            timeout=20,
+        )
+    except requests.RequestException as exc:
+        logger.error('Failed to send log email for job %s: %s', job_id, exc)
+        return False, str(exc)
+
+    if resp.status_code != 200:
+        return False, 'Mail service returned {}: {}'.format(resp.status_code, resp.text[:300])
+
+    try:
+        sent = bool(resp.json().get('sent'))
+    except ValueError:
+        sent = False
+    if not sent:
+        return False, 'Mail service reported it could not send the message.'
+    return True, ''
+
+
 def _run_job(job_id, groups, settings, output_dir):
     try:
         JOBS[job_id]['status'] = 'processing'
@@ -711,10 +760,19 @@ def _run_job(job_id, groups, settings, output_dir):
             'current_file':      '',
             'zip_path':          result.get('zip_path', ''),
             'zip_download_name': '{}.zip'.format(result.get('output_basename', 'attribute-checker-results')),
+            'log_text':          result.get('log_text', ''),
         })
+
+        if result.get('success_count', 0) < result.get('total_groups', 0):
+            _send_job_log_email(job_id, JOBS[job_id])
     except Exception as exc:
         logger.error('Job %s failed: %s', job_id, exc, exc_info=True)
-        JOBS[job_id].update({'status': 'error', 'message': str(exc)})
+        JOBS[job_id].update({
+            'status':   'error',
+            'message':  str(exc),
+            'log_text': traceback.format_exc(),
+        })
+        _send_job_log_email(job_id, JOBS[job_id])
 
 
 # ---------------------------------------------------------------------------

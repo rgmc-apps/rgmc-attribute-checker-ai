@@ -232,6 +232,7 @@ class AttributeGenerator:
         attempt_count = 0
         success_count = 0
         last_error = ''
+        job_log = []
 
         for idx, group_entry in enumerate(self.__groups):
             group = group_entry['files']
@@ -242,6 +243,7 @@ class AttributeGenerator:
 
             if progress_callback:
                 progress_callback(idx, 'Processing {} ({}/{})...'.format(display_name, idx + 1, len(self.__groups)), display_name)
+            job_log.append('[{}/{}] Processing {}'.format(idx + 1, len(self.__groups), display_name))
 
             # Rate limiting — counts API calls (one per group), not raw photos
             if attempt_count > 0 and attempt_count % self.__rpm_limit == 0:
@@ -259,6 +261,7 @@ class AttributeGenerator:
                 choices = data.get('choices', [])
                 if not choices:
                     last_error = (data.get('error') or {}).get('message') or str(data)[:300]
+                    job_log.append('  FAILED: {}'.format(last_error))
                     self.__logger.warning('No choices in response for %s — API error: %s', display_name, data)
                     continue
 
@@ -308,9 +311,11 @@ class AttributeGenerator:
                     txt_paths.append(txt_path)
 
                 success_count += 1
+                job_log.append('  OK: "{}"'.format(title))
 
             except Exception as e:
                 last_error = str(e)
+                job_log.append('  FAILED: {}'.format(last_error))
                 self.__logger.error('Error processing %s: %s', display_name, e, exc_info=True)
                 continue
 
@@ -347,4 +352,7 @@ class AttributeGenerator:
             'status': 'done',
             'zip_path': zip_path,
             'output_basename': _sanitize_filename(self.__output_filename) or 'attribute-checker-results',
+            'success_count': success_count,
+            'total_groups': total_groups,
+            'log_text': '\n'.join(job_log),
         }
