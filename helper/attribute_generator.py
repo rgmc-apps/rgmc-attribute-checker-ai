@@ -118,7 +118,10 @@ class AttributeGenerator:
         payload = {
             'model': self.__gpt_version,
             'messages': [{'role': 'user', 'content': content}],
-            'max_completion_tokens': 1000,
+            # Reasoning models (gpt-5.x/gpt-6.x/o-series) spend part of this budget on hidden
+            # reasoning tokens before writing any visible output — too low a value here can
+            # make the model return choices with empty content (no error, no "no choices").
+            'max_completion_tokens': 4096,
         }
         return requests.post('https://api.openai.com/v1/chat/completions', headers=headers, json=payload, timeout=60)
 
@@ -265,7 +268,18 @@ class AttributeGenerator:
                     self.__logger.warning('No choices in response for %s — API error: %s', display_name, data)
                     continue
 
-                content = choices[0].get('message', {}).get('content', '')
+                content = (choices[0].get('message', {}).get('content') or '').strip()
+                if not content:
+                    finish_reason = choices[0].get('finish_reason', 'unknown')
+                    last_error = (
+                        'Model returned no visible content (finish_reason={}). For reasoning '
+                        'models this usually means the token budget was spent on hidden reasoning '
+                        'before any output — try again or raise max_completion_tokens.'
+                    ).format(finish_reason)
+                    job_log.append('  FAILED: {}'.format(last_error))
+                    self.__logger.warning('Empty content for %s — finish_reason=%s, full response: %s', display_name, finish_reason, data)
+                    continue
+
                 parsed = self.__parse_response(content)
                 title = parsed['product_title']
                 desc = parsed['product_description']
