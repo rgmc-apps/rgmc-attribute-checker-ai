@@ -1,7 +1,10 @@
+import difflib
 import json
 import logging
 import os
+import re
 import threading
+import time
 import traceback
 import uuid
 import tempfile
@@ -89,6 +92,69 @@ def _creative_lookup_name(table_name, pk_column, pk_value, name_column='name'):
         logger.warning('Creative lookup failed for %s.%s=%s', table_name, pk_column, pk_value, exc_info=True)
         return None
     return rows[0].get(name_column) if rows else None
+
+
+# ProductDesign.fabricCode is a supplier/PO-style code (e.g. "WT-674248-01") and has no
+# relation to the Fabric master table's own fabricCode scheme (e.g. "FR0140") — confirmed
+# against live data, and there's no fabricId FK column on ProductDesign either. The only
+# usable link is a fuzzy text match between ProductDesign.fabricName and Fabric.name.
+_FABRIC_CACHE = {'rows': None, 'fetched_at': 0.0}
+_FABRIC_CACHE_TTL_SECONDS = 600
+_FABRIC_FETCH_ROW_LIMIT = 5000
+_FABRIC_MATCH_THRESHOLD = 0.6
+
+
+def _normalize_fabric_name(raw):
+    if not raw:
+        return ''
+    text = raw.split('|')[0].upper()
+    text = re.sub(r'[^A-Z0-9/]+', ' ', text)
+    text = re.sub(r'\s*/\s*', '/', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+def _get_fabric_rows():
+    now = time.time()
+    if _FABRIC_CACHE['rows'] is not None and (now - _FABRIC_CACHE['fetched_at']) < _FABRIC_CACHE_TTL_SECONDS:
+        return _FABRIC_CACHE['rows']
+    try:
+        resp = requests.get(
+            '{}/creative/by_table/latest'.format(CREATIVE_API_BASE_URL),
+            params={
+                'table_name': 'Fabric',
+                'date_column': 'createDate',
+                'number_of_rows': _FABRIC_FETCH_ROW_LIMIT,
+            },
+            timeout=30,
+        )
+        resp.raise_for_status()
+        rows = resp.json().get('data', [])
+    except requests.RequestException:
+        logger.warning('Fabric table fetch failed', exc_info=True)
+        return _FABRIC_CACHE['rows'] or []
+    _FABRIC_CACHE['rows'] = rows
+    _FABRIC_CACHE['fetched_at'] = now
+    return rows
+
+
+def _fabric_name_lookup(raw_fabric_name):
+    """Best-effort fuzzy match of ProductDesign.fabricName against Fabric.name.
+    Falls back to the original value when nothing clears the similarity threshold."""
+    normalized_raw = _normalize_fabric_name(raw_fabric_name)
+    if not normalized_raw:
+        return raw_fabric_name
+
+    best_name, best_ratio = None, 0.0
+    for fabric_row in _get_fabric_rows():
+        candidate = fabric_row.get('name')
+        normalized_candidate = _normalize_fabric_name(candidate)
+        if not normalized_candidate:
+            continue
+        ratio = difflib.SequenceMatcher(None, normalized_raw, normalized_candidate).ratio()
+        if ratio > best_ratio:
+            best_name, best_ratio = candidate, ratio
+
+    return best_name if best_ratio >= _FABRIC_MATCH_THRESHOLD else raw_fabric_name
 
 
 JOBS: dict = {}
@@ -695,7 +761,7 @@ def api_creative_search():
         'design_status':       _creative_lookup_name('DesignStatus', 'designStatusCode', design_status_code),
         'design_status_code':  design_status_code,
         'fabric_code':         row.get('fabricCode'),
-        'fabric_name':         row.get('fabricName'),
+        'fabric_name':         _fabric_name_lookup(row.get('fabricName')),
         'supplier':            _creative_lookup_name('Supplier', 'supplierId', row.get('supplierId')),
         'supplier_stock_no':   row.get('supplierStockNo'),
         'remark':              row.get('remark'),
